@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://cdvnssb4dqb6t"]
+
+[ext_resource type="Script" uid="uid://dywskoryjfp83" path="res://cars/example_car.gd" id="1_l4h6q"]
+
+[node name="ExampleCar" type="CharacterBody2D" unique_id=1664330967]
+script = ExtResource("1_l4h6q")
+
+[node name="Polygon2D" type="Polygon2D" parent="." unique_id=767719637]
+polygon = PackedVector2Array(21.715729, -8.225021, -8.0644655, 1.6359701, -27.78645, 1.6359701, -28.18089, -22.62207, -6.6839266, -22.42485)
+
+[node name="Polygon2D2" type="CollisionPolygon2D" parent="." unique_id=130828431]
+polygon = PackedVector2Array(21.715729, -8.225021, -8.0644655, 1.6359701, -27.78645, 1.6359701, -28.18089, -22.62207, -6.6839266, -22.42485)
+
+[node name="Area2D" type="Area2D" parent="." unique_id=1466911945]
+
+[node name="Polygon2D3" type="CollisionPolygon2D" parent="Area2D" unique_id=2118007662]
+polygon = PackedVector2Array(21.715729, -8.225021, -8.0644655, 1.6359701, -27.78645, 1.6359701, -28.18089, -22.62207, -6.6839266, -22.42485)

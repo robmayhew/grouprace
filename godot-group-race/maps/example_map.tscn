@@ -1,0 +1,51 @@
+[gd_scene format=3 uid="uid://bwu0uf1umyhdo"]
+
+[ext_resource type="Script" uid="uid://dq7heq5l2f0xw" path="res://maps/example_map.gd" id="1_bvkvv"]
+
+[node name="ExampleMap" type="Node2D" unique_id=644810168]
+script = ExtResource("1_bvkvv")
+
+[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=1728020905]
+position = Vector2(490, 164)
+
+[node name="Polygon2D" type="Polygon2D" parent="StaticBody2D" unique_id=434521633]
+polygon = PackedVector2Array(-7, 20, -3, 123, -2, 300, 37, 324, 95, 364, 99, 239, 110, 19, 97, -25, 42, -38)
+
+[node name="Polygon2D2" type="CollisionPolygon2D" parent="StaticBody2D" unique_id=1530279706]
+polygon = PackedVector2Array(-7, 20, -3, 123, -2, 300, 37, 324, 95, 364, 99, 239, 110, 19, 97, -25, 42, -38)
+
+[node name="Waypoint" type="Area2D" parent="." unique_id=472245020 groups=["waypoint"]]
+position = Vector2(732, 462)
+
+[node name="Polygon2D" type="Polygon2D" parent="Waypoint" unique_id=601340880]
+polygon = PackedVector2Array(3, -28, 26, -27, 24, 23, -2, 22, -13, 22, -13, -34)
+
+[node name="Polygon2D2" type="CollisionPolygon2D" parent="Waypoint" unique_id=1132189905]
+polygon = PackedVector2Array(3, -28, 26, -27, 24, 23, -2, 22, -13, 22, -13, -34)
+
+[node name="Waypoint2" type="Area2D" parent="." unique_id=1178142154 groups=["waypoint"]]
+position = Vector2(306, 194)
+
+[node name="Polygon2D" type="Polygon2D" parent="Waypoint2" unique_id=39326842]
+polygon = PackedVector2Array(3, -28, 26, -27, 24, 23, -2, 22, -13, 22, -13, -34)
+
+[node name="Polygon2D2" type="CollisionPolygon2D" parent="Waypoint2" unique_id=1149135976]
+polygon = PackedVector2Array(3, -28, 26, -27, 24, 23, -2, 22, -13, 22, -13, -34)
+
+[node name="Waypoint3" type="Area2D" parent="." unique_id=295230193 groups=["waypoint"]]
+position = Vector2(312, 507)
+
+[node name="Polygon2D" type="Polygon2D" parent="Waypoint3" unique_id=28648766]
+polygon = PackedVector2Array(3, -28, 26, -27, 24, 23, -2, 22, -13, 22, -13, -34)
+
+[node name="Polygon2D2" type="CollisionPolygon2D" parent="Waypoint3" unique_id=136442466]
+polygon = PackedVector2Array(3, -28, 26, -27, 24, 23, -2, 22, -13, 22, -13, -34)
+
+[node name="Waypoint4" type="Area2D" parent="." unique_id=2015908724 groups=["waypoint"]]
+position = Vector2(747, 211)
+
+[node name="Polygon2D" type="Polygon2D" parent="Waypoint4" unique_id=1042425518]
+polygon = PackedVector2Array(3, -28, 26, -27, 24, 23, -2, 22, -13, 22, -13, -34)
+
+[node name="Polygon2D2" type="CollisionPolygon2D" parent="Waypoint4" unique_id=229353047]
+polygon = PackedVector2Array(3, -28, 26, -27, 24, 23, -2, 22, -13, 22, -13, -34)
