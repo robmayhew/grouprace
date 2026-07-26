@@ -1,4 +1,4 @@
-extends car
+extends Car
 
 # --- Tuning ---------------------------------------------------------------
 @export var engine_power := 800.0       # forward acceleration force

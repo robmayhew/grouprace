@@ -2,6 +2,8 @@
 
 [ext_resource type="Script" uid="uid://dq7heq5l2f0xw" path="res://maps/example_map.gd" id="1_bvkvv"]
 
+[sub_resource type="CircleShape2D" id="CircleShape2D_1vxqo"]
+
 [node name="ExampleMap" type="Node2D" unique_id=644810168]
 script = ExtResource("1_bvkvv")
 
@@ -49,3 +51,15 @@ polygon = PackedVector2Array(3, -28, 26, -27, 24, 23, -2, 22, -13, 22, -13, -34)
 
 [node name="Polygon2D2" type="CollisionPolygon2D" parent="Waypoint4" unique_id=229353047]
 polygon = PackedVector2Array(3, -28, 26, -27, 24, 23, -2, 22, -13, 22, -13, -34)
+
+[node name="Start1" type="Area2D" parent="." unique_id=1128944366 groups=["start"]]
+position = Vector2(366, 575)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Start1" unique_id=344863359]
+shape = SubResource("CircleShape2D_1vxqo")
+
+[node name="Start2" type="Area2D" parent="." unique_id=630725092 groups=["start"]]
+position = Vector2(470, 579)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Start2" unique_id=1386278591]
+shape = SubResource("CircleShape2D_1vxqo")
