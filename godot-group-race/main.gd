@@ -23,6 +23,10 @@ func _ready() -> void:
 	var car = cars.get(0).instantiate() as Car
 	car.add_child(cam)
 	cam.make_current()
+	
+	var car2 = cars.get(0).instantiate() as Car
+
+	add_child(car2)
 
 
 	add_child(car)
@@ -36,6 +40,8 @@ func _ready() -> void:
 	var start_positions:Array[Area2D] = map.fetch_start_positions()
 	var start1 = start_positions.get(0)
 	car.position = start1.position
+	var start2 = start_positions.get(1)
+	car2.position = start2.position
 
 func _on_waypoint_entered(body: Node2D, index: int) -> void:
 	print("Entered waypoint ", index, " -> ", body.name)
