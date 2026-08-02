@@ -5,6 +5,16 @@ extends CharacterBody2D
 var damage:int
 var car_name:String = "Give Me A name"
 
+# This car's own input source. A car only ever knows about its own controller,
+# never any other car's controls.
+var controller: CarController
+
+func set_controller(c: CarController) -> void:
+	controller = c
+
+func fetch_controller() -> CarController:
+	return controller
+
 func fetch_damange() -> int:
 	return damage
 	

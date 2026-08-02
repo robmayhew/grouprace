@@ -27,15 +27,21 @@ func _physics_process(delta: float) -> void:
 
 
 func _get_input() -> void:
+	# All input comes from this car's own injected controller. With no
+	# controller the car simply sits still.
+	if controller == null:
+		return
+
 	# Steering: only sets which way the front wheels point.
-	var turn := Input.get_axis("ui_left", "ui_right")
-	steer_direction = turn * deg_to_rad(steering_angle)
+	steer_direction = controller.get_steering() * deg_to_rad(steering_angle)
 
 	# Throttle / brake act along the car's forward axis (+X).
-	if Input.is_action_pressed("ui_up"):
-		acceleration = transform.x * engine_power
-	if Input.is_action_pressed("ui_down"):
-		acceleration = transform.x * braking
+	var throttle := controller.get_throttle()
+	var brake := controller.get_brake()
+	if throttle > 0.0:
+		acceleration = transform.x * engine_power * throttle
+	if brake > 0.0:
+		acceleration = transform.x * braking * brake
 
 
 func _apply_friction(delta: float) -> void:

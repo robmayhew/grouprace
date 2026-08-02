@@ -57,6 +57,17 @@ func _ready() -> void:
 	var car2 = cars.get(0).instantiate() as Car
 	car.set_car_name("Car 1")
 	car2.set_car_name("Car 2")
+
+	# Assign each car its own input source. Cars stay agnostic about anyone
+	# else's controls.
+	# Player 1 -> Logitech F310. Set the back switch to "X" (XInput) and plug in
+	# before launching. Steer = left stick, throttle = RT, brake = LT.
+	car.set_controller(GamepadController.new(0))   # first connected pad
+	# Player 2 -> keyboard (WASD).
+	car2.set_controller(KeyboardController.new(KEY_W, KEY_S, KEY_A, KEY_D))
+
+	# No pad handy? Fall back to a second keyboard scheme:
+	#   car.set_controller(KeyboardController.new(KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT))
 	_car2 = car2
 	vp1.add_child(car2)
 	vp1.add_child(car)
