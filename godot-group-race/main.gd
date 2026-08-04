@@ -26,6 +26,15 @@ func _ready() -> void:
 	cars = load_packed_scene("cars")
 	maps = load_packed_scene("maps")
 
+	# Let the players pick their cars and a map before building the race.
+	_show_menu()
+
+
+# Builds and runs the race with the chosen scenes. Called once the player
+# presses Start in the menu (see _show_menu). Everything here used to live in
+# _ready(); the only difference is the map/car scenes are now passed in instead
+# of being hard-coded.
+func _start_race(car1_scene: PackedScene, car2_scene: PackedScene, map_scene: PackedScene) -> void:
 	# --- Split-screen plumbing ---------------------------------------------
 	# Two SubViewports side by side. Each SubViewport renders its own current
 	# Camera2D independently (a single viewport can only show one camera at a
@@ -48,15 +57,15 @@ func _ready() -> void:
 	vp2.world_2d = vp1.get_world_2d()
 
 	# --- Game world (lives inside viewport 1) ------------------------------
-	var map = maps.get(0).instantiate() as Map
+	var map = map_scene.instantiate() as Map
 	vp1.add_child(map)
 
 	maps_bounds = map.fetch_map_bounds()
 	# A single drawer in the shared World2D renders in both split-screen halves.
 	_add_bounds_drawer(vp1)
 
-	var car = cars.get(1).instantiate() as Car
-	var car2 = cars.get(0).instantiate() as Car
+	var car = car1_scene.instantiate() as Car
+	var car2 = car2_scene.instantiate() as Car
 	car.set_car_name("Car 1")
 	car2.set_car_name("Car 2")
 
@@ -99,6 +108,91 @@ func _ready() -> void:
 	car.position = start1.position
 	var start2 = start_positions.get(1)
 	car2.position = start2.position
+
+
+# --- Startup menu ---------------------------------------------------------
+# The menu lives on its own CanvasLayer so it sits on top of everything. When
+# Start is pressed we free the whole layer and hand the chosen scenes to
+# _start_race. Kept references so the Start handler can read the selections.
+var _menu_layer: CanvasLayer
+var _p1_option: OptionButton
+var _p2_option: OptionButton
+var _map_option: OptionButton
+
+# Turns a scene file path into a readable label, e.g.
+# "res://cars/maldrax/maldrax_car.tscn" -> "maldrax_car".
+func _scene_display_name(scene: PackedScene) -> String:
+	return scene.resource_path.get_file().get_basename()
+
+# Fills an OptionButton with one item per scene, then selects a default index
+# (clamped so we never select out of range when there are few scenes).
+func _populate_options(option: OptionButton, scenes: Array[PackedScene], default_index: int) -> void:
+	for scene in scenes:
+		option.add_item(_scene_display_name(scene))
+	if scenes.size() > 0:
+		option.select(clampi(default_index, 0, scenes.size() - 1))
+
+# Builds the car/map selection menu shown at startup.
+func _show_menu() -> void:
+	_menu_layer = CanvasLayer.new()
+	add_child(_menu_layer)
+
+	# Opaque backdrop so the (empty) game world behind it doesn't show through.
+	var bg := ColorRect.new()
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bg.color = Color(0.1, 0.1, 0.12)
+	_menu_layer.add_child(bg)
+
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_menu_layer.add_child(center)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 10)
+	center.add_child(vbox)
+
+	var title := Label.new()
+	title.text = "Group Race"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+
+	# Player 1 defaults to car index 1 and Player 2 to index 0, matching the
+	# selections this game used before the menu existed.
+	_p1_option = _add_menu_row(vbox, "Player 1 Car")
+	_populate_options(_p1_option, cars, 1)
+	_p2_option = _add_menu_row(vbox, "Player 2 Car")
+	_populate_options(_p2_option, cars, 0)
+	_map_option = _add_menu_row(vbox, "Map")
+	_populate_options(_map_option, maps, 0)
+
+	var start_button := Button.new()
+	start_button.text = "Start"
+	start_button.pressed.connect(_on_start_pressed)
+	vbox.add_child(start_button)
+
+# Adds a "<label> + OptionButton" row to the menu and returns the OptionButton.
+func _add_menu_row(parent: Control, label_text: String) -> OptionButton:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	parent.add_child(row)
+
+	var label := Label.new()
+	label.text = label_text
+	label.custom_minimum_size = Vector2(120, 0)
+	row.add_child(label)
+
+	var option := OptionButton.new()
+	option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(option)
+	return option
+
+# Reads the selections, tears down the menu, and starts the race.
+func _on_start_pressed() -> void:
+	var p1_idx := _p1_option.selected
+	var p2_idx := _p2_option.selected
+	var map_idx := _map_option.selected
+	_menu_layer.queue_free()
+	_start_race(cars[p1_idx], cars[p2_idx], maps[map_idx])
 
 
 # Builds one split-screen half: the game view (SubViewport) with a colored frame
