@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://cveyg6co37ive"]
+
+[ext_resource type="Script" uid="uid://c8qqqmuh4ph3n" path="res://cars/maldrax/maldrax_car.gd" id="1_4eufx"]
+[ext_resource type="Texture2D" uid="uid://cxyhvl4mthakn" path="res://cars/maldrax/maldrax.png" id="2_nlm1w"]
+
+[node name="MaldraxCar" type="CharacterBody2D" unique_id=92930999]
+script = ExtResource("1_4eufx")
+metadata/_custom_type_script = "uid://cuat11nn8wrl"
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="." unique_id=2056585758]
+polygon = PackedVector2Array(-14, -23, 15, -23, 15, 18, -18, 18)
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1333810518]
+texture = ExtResource("2_nlm1w")

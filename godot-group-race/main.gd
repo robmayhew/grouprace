@@ -55,7 +55,7 @@ func _ready() -> void:
 	# A single drawer in the shared World2D renders in both split-screen halves.
 	_add_bounds_drawer(vp1)
 
-	var car = cars.get(0).instantiate() as Car
+	var car = cars.get(1).instantiate() as Car
 	var car2 = cars.get(0).instantiate() as Car
 	car.set_car_name("Car 1")
 	car2.set_car_name("Car 2")
@@ -208,7 +208,11 @@ func load_packed_scene(dir_path:String) -> Array[PackedScene]:
 		dir.list_dir_begin()
 		var file_name := dir.get_next()
 		while file_name != "":
-			if not dir.current_is_dir() and file_name.ends_with(".tscn"):
+			if dir.current_is_dir():
+				# Skip Godot's "." / ".." and recurse into real sub-folders
+				if file_name != "." and file_name != "..":
+					result.append_array(load_packed_scene(dir_path.path_join(file_name)))
+			elif file_name.ends_with(".tscn"):
 				var scene_path := ("res://" + dir_path).path_join(file_name)
 				var packed_scene: PackedScene = load(scene_path)
 				result.append(packed_scene)
@@ -217,5 +221,5 @@ func load_packed_scene(dir_path:String) -> Array[PackedScene]:
 			file_name = dir.get_next()
 		dir.list_dir_end()
 	else:
-		push_error("An error occurred when trying to access the path.")
-	return result	
+		push_error("An error occurred when trying to access the path: " + dir_path)
+	return result
