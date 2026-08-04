@@ -1,21 +1,23 @@
 # START HERE
 
-## Step 1 Create or Login to Guthub.com
+## Step 1 Create or Login to GitHub.com
 
 https://github.com/
 
-## Step 2 install a Git client. 
+## Step 2 Install a Git client
 
-If you are not a git expert, I recomend Github desktop 
+If you are not a git expert, I recommend GitHub Desktop.
 https://desktop.github.com/download/
 
 
 ## Step 3 Clone this repository
 
-![Clone Dialog](pic0001.png)
-Select the URL Tab
+In GitHub Desktop, go to **File → Clone Repository** to open the clone dialog.
 
-Enter in 
+![Clone Dialog](pic0001.png)
+Select the URL tab.
+
+Enter in
 
 https://github.com/robmayhew/grouprace
 
@@ -23,23 +25,23 @@ https://github.com/robmayhew/grouprace
 
 Note the LocalPath that has been copied into.
 
-# Step 4 Download Godot game engine
+## Step 4 Download the Godot game engine
 
 https://godotengine.org/
 
-Currently using version 1.7.x (Anything close to that will be fine)
+Currently using version 4.6.x (Anything close to that will be fine)
 
-# Step 5 Start Godot.exe 
+## Step 5 Start Godot.exe
 
 Click Import existing project.
 
 ![Import Game](pic0003.png)
 
-Select the godot-group-race sub folder. And select project.godot
+Select the godot-group-race sub folder, then select project.godot.
 
 ![Import part 2](pic0004.png)
 
-Click the White Triangle to run the game. #1
+Click the play button (the white triangle) in the top-right corner to run the game.
 
 ![Run](pic0005.png)
 
@@ -47,8 +49,10 @@ The game
 
 ![the game](pic0006.png)
 
-Select cars from the drop down menu.
+This is a 2-player race played on a single keyboard.
 
-Then click start.
+Select a car for each player from the drop-down menus.
 
-Control one care with Arrow keys. The other withe WSAD. 
+Then click Start.
+
+Player 1 controls their car with the Arrow keys. Player 2 uses WASD.
