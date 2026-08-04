@@ -11,4 +11,5 @@ metadata/_custom_type_script = "uid://cuat11nn8wrl"
 polygon = PackedVector2Array(-14, -23, 15, -23, 15, 18, -18, 18)
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1333810518]
+rotation = 1.5707964
 texture = ExtResource("2_nlm1w")

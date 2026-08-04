@@ -77,12 +77,12 @@ func _start_race(car1_scene: PackedScene, car2_scene: PackedScene, map_scene: Pa
 	# else's controls.
 	# Player 1 -> Logitech F310. Set the back switch to "X" (XInput) and plug in
 	# before launching. Steer = left stick, throttle = RT, brake = LT.
-	car.set_controller(GamepadController.new(0))   # first connected pad
+	# car.set_controller(GamepadController.new(0))   # first connected pad
 	# Player 2 -> keyboard (WASD).
 	car2.set_controller(KeyboardController.new(KEY_W, KEY_S, KEY_A, KEY_D))
 
 	# No pad handy? Fall back to a second keyboard scheme:
-	#   car.set_controller(KeyboardController.new(KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT))
+	car.set_controller(KeyboardController.new(KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT))
 	_car2 = car2
 	vp1.add_child(car2)
 	vp1.add_child(car)
