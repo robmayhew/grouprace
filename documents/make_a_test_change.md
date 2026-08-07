@@ -64,7 +64,22 @@ You should now see your current branch as the one you just created.
 
 Next, click **Publish branch**. This will push the branch to github.com.
 
+Once the branch is published, your changes are on github.com. Next up is to create a pull request.
+
+![create pull request](pic0017.png)
+
+Click the **Create Preview Pull Request** button.
+
+![create pull request part 2](pic0018.png)
+
+Click the **Create Pull Request** button.
+
+This will open up github.com in a browser. Add a simple description of the change and click **Create pull request** in github.
+
+![create pull request part 3](pic0019.png)
+
+
 ## You're done!
 
-Once the branch is published, your changes are on github.com. Let me know the name of the branch you created and I'll take a look.
+Your pull request is now created on github.com. Let me know the name of the branch you created and I'll take a look.
 
