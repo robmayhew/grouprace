@@ -1,13 +1,24 @@
 # Make a test change 
 
+## Before you start
+
+You will need the following installed and set up:
+
+- **Godot** with this project open.
+- **GitHub Desktop** with this repository cloned.
+
+**IMPORTANT:** Before you can publish a branch, you need to be added as a collaborator on the project. If you have not already done so, email rob.mayhew@gmail.com with your github.com email address so I can add you.
+
+## Make the change
+
 To make sure everything works lets make a simple change to the project.
 
-With the godot project open create a new folder under the cars folder. Give it a unique name. firstname_todays_date. 
+With the godot project open create a new folder under the cars folder. Give it a unique name in the format `nameYYYYMMDD` (your first name followed by today's date, no spaces or underscores).
 
-so I would be rob20260805 format (nameYYYYMMDD)
+So I would be `rob20260805`.
 
 
-Select the file system tap
+Select the FileSystem tab
 
 Right click on the cars folder
 
@@ -32,9 +43,28 @@ Type some text in the editor and click save. (CTRL + s)
 
 Now it's time to push these changes to github.com
 
-Open Github Desktop
+Open GitHub Desktop.
 
-Create a new branch. This is where all your changes will be made.
+Create a new branch. This is where all your changes will be made. In GitHub Desktop, click the **Current Branch** dropdown at the top, then click **New Branch**.
 
-NOTE: If you have not already done so. Email rob.mayhew@gmail.com with your github.com email address. I need to add you as a colaberator on the project.
+Give the branch a unique name.
+
+Then click **Create Branch**.
+
+![new branch](pic0014.png)
+
+
+You may see the following dialog asking where to bring your changes. Click **Bring my changes to the new branch**, then click **Switch Branch**.
+
+![move changes](pic0015.png)
+
+You should now see your current branch as the one you just created.
+
+![new branch made](pic0016.png)
+
+Next, click **Publish branch**. This will push the branch to github.com.
+
+## You're done!
+
+Once the branch is published, your changes are on github.com. Let me know the name of the branch you created and I'll take a look.
 
