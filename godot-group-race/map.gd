@@ -12,3 +12,7 @@ func fetch_start_positions() -> Array[Area2D]:
 func fetch_map_bounds() -> Vector2:
 	push_error("Map bounds not defined")
 	return Vector2(100,100)
+
+func fetch_map_name() -> String:
+	push_error("Map name not found");
+	return "No Name"

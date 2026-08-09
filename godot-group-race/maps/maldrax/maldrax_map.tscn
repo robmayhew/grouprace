@@ -2,5 +2,32 @@
 
 [ext_resource type="Script" uid="uid://dhg2xao05evhm" path="res://maps/maldrax/maldrax_map.gd" id="1_e1uqo"]
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1vxqo"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_lkmpl"]
+size = Vector2(100, 100)
+
 [node name="MaldraxMap" type="Node2D" unique_id=1978114687]
 script = ExtResource("1_e1uqo")
+
+[node name="start1" type="Area2D" parent="." unique_id=234461210 groups=["start"]]
+position = Vector2(100, 96)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="start1" unique_id=1522480612]
+shape = SubResource("RectangleShape2D_1vxqo")
+
+[node name="start2" type="Area2D" parent="." unique_id=458102899 groups=["start"]]
+position = Vector2(194, 96)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="start2" unique_id=748436983]
+shape = SubResource("RectangleShape2D_1vxqo")
+
+[node name="waypoint" type="Area2D" parent="." unique_id=18600752 groups=["waypoint"]]
+position = Vector2(54, 234)
+
+[node name="ColorRect" type="ColorRect" parent="waypoint" unique_id=990504106]
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="waypoint" unique_id=32371322]
+shape = SubResource("RectangleShape2D_lkmpl")
