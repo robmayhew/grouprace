@@ -15,12 +15,41 @@ const WALL_THICKNESS := 40.0
 @export var bounds_color: Color = Color.RED
 @export var bounds_width: float = 4.0
 
+# --- Sound ----------------------------------------------------------------
+# Map event sounds, assigned per-map in the Inspector. Left unset = silent.
+# main.gd calls the play_* methods below at the matching moments.
+@export var start_sound: AudioStream    # race start
+@export var lap_sound: AudioStream      # a car completes a lap (all waypoints)
+@export var win_sound: AudioStream      # a car wins the race
+
+var _audio: AudioStreamPlayer
+
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	# Don't spawn physics walls while editing in the 2D editor.
+	# Don't spawn physics walls or audio while editing in the 2D editor.
 	if Engine.is_editor_hint():
 		return
+	_audio = AudioStreamPlayer.new()
+	# Keep playing (e.g. the win sting) even after the race pauses the tree.
+	_audio.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(_audio)
 	build_boundary_walls()
+
+# --- Event sounds ---------------------------------------------------------
+func play_start_sound() -> void:
+	_play_sound(start_sound)
+
+func play_lap_sound() -> void:
+	_play_sound(lap_sound)
+
+func play_win_sound() -> void:
+	_play_sound(win_sound)
+
+func _play_sound(stream: AudioStream) -> void:
+	if stream == null or _audio == null:
+		return
+	_audio.stream = stream
+	_audio.play()
 
 # Draws the bounds rectangle outline. Runs in the editor (via @tool) and at
 # runtime, so the play area is visible while laying out a map and during play.
