@@ -1,76 +1,39 @@
 extends Car
+# Tron light-cycle style: constant forward speed and instant 90-degree turns.
+# No coasting, no drift — the bike only ever travels along perpendicular axes.
+
 # --- Tuning ---------------------------------------------------------------
-@export var engine_power := 800.0       # forward acceleration force
-@export var braking := -450.0           # reverse / brake force
-@export var max_speed_reverse := 250.0
-@export var friction := -55.0           # constant slowdown
-@export var drag := -0.06               # slowdown that grows with speed
-@export var wheel_base := 70.0          # distance between front and rear axle (px)
-@export var steering_angle := 15.0      # how far the front wheels turn (degrees)
-@export var slip_speed := 400.0         # speed at which the car starts to slide
-@export var traction_slow := 10.0       # grip at low speed
-@export var traction_fast := 2.5        # grip at high speed
+@export var cruise_speed := 400.0       # constant forward speed (px/s)
+@export var turn_step := 90.0           # degrees rotated per turn
+@export var steer_threshold := 0.5      # how far steering must move to count as a turn
 
 # --- State ----------------------------------------------------------------
-var acceleration := Vector2.ZERO
-var steer_direction := 0.0
+var prev_steer := 0.0                   # last frame's steering, for edge detection
 
 
-func _physics_process(delta: float) -> void:
-	acceleration = Vector2.ZERO
-	_get_input()
-	_apply_friction(delta)
-	_calculate_steering(delta)
-	velocity += acceleration * delta
+func _physics_process(_delta: float) -> void:
+	_handle_turning()
+	# Always drive straight ahead along the current heading.
+	velocity = transform.x * cruise_speed
 	move_and_slide()
 
 
-func _get_input() -> void:
-	# All input comes from this car's own injected controller. With no
-	# controller the car simply sits still.
+func _handle_turning() -> void:
+	# With no controller the bike simply sits still.
 	if controller == null:
+		velocity = Vector2.ZERO
 		return
 
-	# Steering: only sets which way the front wheels point.
-	steer_direction = controller.get_steering() * deg_to_rad(steering_angle)
+	var steer := controller.get_steering()
 
-	# Throttle / brake act along the car's forward axis (+X).
-	var throttle := controller.get_throttle()
-	var brake := controller.get_brake()
-	if throttle > 0.0:
-		acceleration = transform.x * engine_power * throttle
-	if brake > 0.0:
-		acceleration = transform.x * braking * brake
+	# Only turn on the edge (neutral -> pushed). Holding the stick does nothing
+	# extra, so one press = exactly one 90-degree turn.
+	var pushed_now := absf(steer) >= steer_threshold
+	var pushed_before := absf(prev_steer) >= steer_threshold
+	if pushed_now and not pushed_before:
+		if steer > 0.0:
+			rotation += deg_to_rad(turn_step)    # turn right
+		else:
+			rotation -= deg_to_rad(turn_step)    # turn left
 
-
-func _apply_friction(delta: float) -> void:
-	# Come to a full stop instead of creeping forever.
-	if velocity.length() < 5.0 and acceleration == Vector2.ZERO:
-		velocity = Vector2.ZERO
-	var friction_force := velocity * friction * delta
-	var drag_force := velocity * velocity.length() * drag * delta
-	acceleration += drag_force + friction_force
-
-
-func _calculate_steering(delta: float) -> void:
-	# Bicycle model: move a front and rear wheel, derive a new heading from them.
-	var rear_wheel := position - transform.x * wheel_base / 2.0
-	var front_wheel := position + transform.x * wheel_base / 2.0
-	rear_wheel += velocity * delta
-	front_wheel += velocity.rotated(steer_direction) * delta
-
-	var new_heading := rear_wheel.direction_to(front_wheel)
-
-	# Less grip at high speed so the car can drift.
-	var traction := traction_slow
-	if velocity.length() > slip_speed:
-		traction = traction_fast
-
-	var d := new_heading.dot(velocity.normalized())
-	if d > 0:
-		velocity = velocity.lerp(new_heading * velocity.length(), traction * delta)
-	if d < 0:
-		# Reversing.
-		velocity = -new_heading * min(velocity.length(), max_speed_reverse)
-
-	rotation = new_heading.angle()
+	prev_steer = steer

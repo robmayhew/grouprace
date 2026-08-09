@@ -1,3 +1,6 @@
 [gd_scene format=3 uid="uid://dqe3o0n7trmiw"]
 
+[ext_resource type="Script" uid="uid://dhg2xao05evhm" path="res://maps/maldrax/maldrax_map.gd" id="1_e1uqo"]
+
 [node name="MaldraxMap" type="Node2D" unique_id=1978114687]
+script = ExtResource("1_e1uqo")
