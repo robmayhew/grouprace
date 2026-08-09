@@ -14,6 +14,11 @@ var _car_inside := {}
 var _cam2: Camera2D
 var _car2: Car
 
+# The current map (for its event sounds) and the cars racing on it (so we can
+# silence their engines when the race ends).
+var _map: Map
+var _race_cars: Array[Car] = []
+
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	cars = load_packed_scene("cars")
@@ -29,6 +34,7 @@ func _ready() -> void:
 # of being hard-coded.
 func _start_race(car1_scene: PackedScene, car2_scene: PackedScene, map_scene: PackedScene) -> void:
 	_game_over = false
+	_race_cars.clear()
 	# --- Split-screen plumbing ---------------------------------------------
 	# Two SubViewports side by side. Each SubViewport renders its own current
 	# Camera2D independently (a single viewport can only show one camera at a
@@ -53,6 +59,9 @@ func _start_race(car1_scene: PackedScene, car2_scene: PackedScene, map_scene: Pa
 	# --- Game world (lives inside viewport 1) ------------------------------
 	var map = map_scene.instantiate() as Map
 	vp1.add_child(map)
+	_map = map
+	# Race is underway -> play the map's start sound.
+	map.play_start_sound()
 
 	# The map draws its own bounds outline (see Map._draw); we still read the
 	# size here for the out-of-bounds gameplay checks below.
@@ -68,6 +77,8 @@ func _start_race(car1_scene: PackedScene, car2_scene: PackedScene, map_scene: Pa
 	var car2 = car2_scene.instantiate() as Car
 	car.set_car_name("Car 1")
 	car2.set_car_name("Car 2")
+	_race_cars.append(car)
+	_race_cars.append(car2)
 
 	# Wire each car to its viewport's score label (waypoints hit, starts at 0).
 	_register_score(car, half1["score_label"])
@@ -277,6 +288,10 @@ func _on_waypoint_entered(body: Node2D, index: int) -> void:
 		_scores[car] += 1
 		hits.clear()
 		print(car.fetch_car_name(), " cleared all waypoints -> score ", _scores[car])
+		# Lap sound for a normal lap; the winning lap plays the win sound instead
+		# (handled in _show_winner), so we don't stack both on the same frame.
+		if _map and _scores[car] < WIN_SCORE:
+			_map.play_lap_sound()
 	_update_score_label(car)
 	# First car to reach WIN_SCORE wins the race.
 	if _scores[car] >= WIN_SCORE:
@@ -288,6 +303,11 @@ func _on_waypoint_entered(body: Node2D, index: int) -> void:
 # so its button still responds while the rest of the tree is paused.
 func _show_winner(winner: Car) -> void:
 	_game_over = true
+	# Play the win sound before pausing, and silence the cars' engines.
+	if _map:
+		_map.play_win_sound()
+	for c in _race_cars:
+		c.stop_sounds()
 	get_tree().paused = true
 
 	var layer := CanvasLayer.new()

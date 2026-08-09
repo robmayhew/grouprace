@@ -13,8 +13,6 @@ size = Vector2(20, 260)
 [node name="MaldraxMap" type="Node2D" unique_id=1978114687]
 script = ExtResource("1_e1uqo")
 map_bounds = Vector2(2000, 2000)
-bounds_color = Color(0.34961677, 0.611406, 0.27596536, 1)
-bounds_width = 5.0
 
 [node name="start1" type="Area2D" parent="." unique_id=234461210 groups=["start"]]
 position = Vector2(100, 96)

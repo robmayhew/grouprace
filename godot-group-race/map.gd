@@ -15,12 +15,56 @@ const WALL_THICKNESS := 40.0
 @export var bounds_color: Color = Color.RED
 @export var bounds_width: float = 4.0
 
+# --- Sound ----------------------------------------------------------------
+# Map event sounds are synthesized at runtime (see ToneGenerator) — no sample
+# files. main.gd calls the play_* methods below at the matching moments.
+var _synth: ToneGenerator
+
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	# Don't spawn physics walls while editing in the 2D editor.
+	# Don't spawn physics walls or audio while editing in the 2D editor.
 	if Engine.is_editor_hint():
 		return
+	_synth = ToneGenerator.new()
+	# Keep synthesizing (e.g. the win jingle) even after the race pauses the tree.
+	_synth.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(_synth)
 	build_boundary_walls()
+
+# --- Event sounds ---------------------------------------------------------
+# Countdown: three low beeps and a higher "go".
+func play_start_sound() -> void:
+	if _synth == null:
+		return
+	_synth.play_notes([
+		{"freq": 440.0, "dur": 0.15, "wave": ToneGenerator.SQUARE, "amp": 0.3},
+		{"freq": 0.0, "dur": 0.20, "wave": ToneGenerator.SQUARE, "amp": 0.0},
+		{"freq": 440.0, "dur": 0.15, "wave": ToneGenerator.SQUARE, "amp": 0.3},
+		{"freq": 0.0, "dur": 0.20, "wave": ToneGenerator.SQUARE, "amp": 0.0},
+		{"freq": 440.0, "dur": 0.15, "wave": ToneGenerator.SQUARE, "amp": 0.3},
+		{"freq": 0.0, "dur": 0.20, "wave": ToneGenerator.SQUARE, "amp": 0.0},
+		{"freq": 880.0, "dur": 0.35, "wave": ToneGenerator.SQUARE, "amp": 0.35},
+	])
+
+# Lap: a short two-note rising chime.
+func play_lap_sound() -> void:
+	if _synth == null:
+		return
+	_synth.play_notes([
+		{"freq": 784.0, "dur": 0.10, "wave": ToneGenerator.TRIANGLE, "amp": 0.35},
+		{"freq": 1047.0, "dur": 0.16, "wave": ToneGenerator.TRIANGLE, "amp": 0.35},
+	])
+
+# Win: a short chiptune arpeggio fanfare (C-E-G-C major).
+func play_win_sound() -> void:
+	if _synth == null:
+		return
+	_synth.play_notes([
+		{"freq": 523.0, "dur": 0.12, "wave": ToneGenerator.SQUARE, "amp": 0.32},
+		{"freq": 659.0, "dur": 0.12, "wave": ToneGenerator.SQUARE, "amp": 0.32},
+		{"freq": 784.0, "dur": 0.12, "wave": ToneGenerator.SQUARE, "amp": 0.32},
+		{"freq": 1047.0, "dur": 0.30, "wave": ToneGenerator.SQUARE, "amp": 0.36},
+	])
 
 # Draws the bounds rectangle outline. Runs in the editor (via @tool) and at
 # runtime, so the play area is visible while laying out a map and during play.
