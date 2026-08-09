@@ -2,11 +2,9 @@
 
 [ext_resource type="Script" uid="uid://c8qqqmuh4ph3n" path="res://cars/maldrax/maldrax_car.gd" id="1_4eufx"]
 [ext_resource type="Texture2D" uid="uid://cxyhvl4mthakn" path="res://cars/maldrax/maldrax.png" id="2_nlm1w"]
-[ext_resource type="AudioStream" uid="uid://cw1heywoaw1uc" path="res://cars/maldrax/engine_running_#1-1786302304042.wav" id="2_tpeej"]
 
 [node name="MaldraxCar" type="CharacterBody2D" unique_id=92930999]
 script = ExtResource("1_4eufx")
-engine_sound = ExtResource("2_tpeej")
 metadata/_custom_type_script = "uid://cuat11nn8wrl"
 
 [node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="." unique_id=2056585758]
