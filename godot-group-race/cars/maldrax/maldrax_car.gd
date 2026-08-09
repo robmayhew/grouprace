@@ -6,7 +6,7 @@ extends Car
 @export var cruise_speed := 400.0       # constant forward speed (px/s)
 @export var turn_step := 90.0           # degrees rotated per turn
 @export var steer_threshold := 0.5      # how far steering must move to count as a turn
-
+var moving = false
 # --- State ----------------------------------------------------------------
 var prev_steer := 0.0                   # last frame's steering, for edge detection
 
@@ -14,7 +14,11 @@ var prev_steer := 0.0                   # last frame's steering, for edge detect
 func _physics_process(_delta: float) -> void:
 	_handle_turning()
 	# Always drive straight ahead along the current heading.
-	velocity = transform.x * cruise_speed
+	if moving:
+		velocity = transform.x * cruise_speed
+	else:
+		velocity = Vector2.ZERO
+		
 	move_and_slide()
 
 
@@ -25,6 +29,12 @@ func _handle_turning() -> void:
 		return
 
 	var steer := controller.get_steering()
+	
+	if controller.get_throttle() > 0:
+		moving = true
+	
+	if controller.get_brake() > 0:
+		moving = false
 
 	# Only turn on the edge (neutral -> pushed). Holding the stick does nothing
 	# extra, so one press = exactly one 90-degree turn.

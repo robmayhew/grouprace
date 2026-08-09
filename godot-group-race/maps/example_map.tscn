@@ -6,6 +6,9 @@
 
 [node name="ExampleMap" type="Node2D" unique_id=644810168]
 script = ExtResource("1_bvkvv")
+map_bounds = null
+bounds_color = null
+bounds_width = null
 
 [node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=1728020905]
 position = Vector2(490, 164)

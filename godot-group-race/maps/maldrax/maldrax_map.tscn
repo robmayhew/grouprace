@@ -5,10 +5,16 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1vxqo"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_lkmpl"]
-size = Vector2(100, 100)
+size = Vector2(353, 100)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_e1uqo"]
+size = Vector2(20, 260)
 
 [node name="MaldraxMap" type="Node2D" unique_id=1978114687]
 script = ExtResource("1_e1uqo")
+map_bounds = Vector2(2000, 2000)
+bounds_color = Color(0.34961677, 0.611406, 0.27596536, 1)
+bounds_width = 5.0
 
 [node name="start1" type="Area2D" parent="." unique_id=234461210 groups=["start"]]
 position = Vector2(100, 96)
@@ -26,8 +32,33 @@ shape = SubResource("RectangleShape2D_1vxqo")
 position = Vector2(54, 234)
 
 [node name="ColorRect" type="ColorRect" parent="waypoint" unique_id=990504106]
-offset_right = 40.0
+offset_left = -30.0
+offset_right = 303.0
 offset_bottom = 40.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="waypoint" unique_id=32371322]
+position = Vector2(126.5, 0)
 shape = SubResource("RectangleShape2D_lkmpl")
+
+[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=4920126]
+
+[node name="Polygon2D" type="Polygon2D" parent="StaticBody2D" unique_id=969378551]
+polygon = PackedVector2Array(317, 222, 320, 1691, 1725, 1691, 1702, 1469, 603, 1452, 580, 438, 1692, 434, 1678, 168)
+
+[node name="Polygon2D2" type="CollisionPolygon2D" parent="StaticBody2D" unique_id=1805359655]
+polygon = PackedVector2Array(317, 222, 320, 1691, 1725, 1691, 1702, 1469, 603, 1452, 580, 438, 1692, 434, 1678, 168)
+
+[node name="StaticBody2D2" type="StaticBody2D" parent="." unique_id=382824620]
+
+[node name="Polygon2D" type="Polygon2D" parent="StaticBody2D2" unique_id=1949347178]
+polygon = PackedVector2Array(2059, 583, 1897, 660, 876, 694, 843, 1186, 1853, 1213, 2096, 1307)
+
+[node name="Polygon2D2" type="CollisionPolygon2D" parent="StaticBody2D2" unique_id=1030855752]
+polygon = PackedVector2Array(2059, 583, 1897, 660, 876, 694, 843, 1186, 1853, 1213, 2096, 1307)
+
+[node name="Area2D" type="Area2D" parent="." unique_id=317201014 groups=["waypoint"]]
+position = Vector2(1011, 1209)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=908459808]
+position = Vector2(0, 120)
+shape = SubResource("RectangleShape2D_e1uqo")

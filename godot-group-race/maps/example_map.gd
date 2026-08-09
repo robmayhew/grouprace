@@ -1,3 +1,4 @@
+@tool
 extends Map
 
 func fetch_waypoints() -> Array[Area2D]:
@@ -13,12 +14,10 @@ func fetch_start_positions() -> Array[Area2D]:
 	for n in waypoints:
 		result.append(n)
 	return result
-	
-func fetch_map_bounds() -> Vector2:
-	return Vector2(1000,1000)
-	
+
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
+	super._ready()
 	pass # Replace with function body.
 
 

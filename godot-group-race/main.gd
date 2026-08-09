@@ -1,12 +1,5 @@
 extends Node2D
 
-# Draws the red map-bounds outline. It lives in the shared World2D (see
-# _add_bounds_drawer) so it shows up in both split-screen halves.
-class BoundsDrawer extends Node2D:
-	var bounds: Rect2
-	func _draw() -> void:
-		draw_rect(bounds, Color.RED, false, 4.0)
-
 var cars: Array[PackedScene] = []
 var maps: Array[PackedScene] = []
 var maps_bounds:Vector2 = Vector2(600,800)
@@ -35,6 +28,7 @@ func _ready() -> void:
 # _ready(); the only difference is the map/car scenes are now passed in instead
 # of being hard-coded.
 func _start_race(car1_scene: PackedScene, car2_scene: PackedScene, map_scene: PackedScene) -> void:
+	_game_over = false
 	# --- Split-screen plumbing ---------------------------------------------
 	# Two SubViewports side by side. Each SubViewport renders its own current
 	# Camera2D independently (a single viewport can only show one camera at a
@@ -60,9 +54,15 @@ func _start_race(car1_scene: PackedScene, car2_scene: PackedScene, map_scene: Pa
 	var map = map_scene.instantiate() as Map
 	vp1.add_child(map)
 
+	# The map draws its own bounds outline (see Map._draw); we still read the
+	# size here for the out-of-bounds gameplay checks below.
 	maps_bounds = map.fetch_map_bounds()
-	# A single drawer in the shared World2D renders in both split-screen halves.
-	_add_bounds_drawer(vp1)
+
+	# Waypoint scoring: a car scores a point once it has cleared *every* waypoint,
+	# then the lap resets so it can score again by clearing them all once more.
+	# We fetch the list once here and reuse it for the signal wiring below.
+	var waypoints: Array[Area2D] = map.fetch_waypoints()
+	_waypoint_total = waypoints.size()
 
 	var car = car1_scene.instantiate() as Car
 	var car2 = car2_scene.instantiate() as Car
@@ -98,7 +98,6 @@ func _start_race(car1_scene: PackedScene, car2_scene: PackedScene, map_scene: Pa
 	vp2.add_child(_cam2)
 	_cam2.make_current()
 
-	var waypoints:Array[Area2D] = map.fetch_waypoints()
 	for i in waypoints.size():
 		# bind(i) passes the waypoint index to the callback so we know which one.
 		waypoints[i].body_entered.connect(_on_waypoint_entered.bind(i))
@@ -236,35 +235,99 @@ func _make_split_viewport(parent: Control, border_color: Color) -> Dictionary:
 	return { "viewport": vp, "score_label": score_label }
 
 
-# Adds a red map-bounds outline to a viewport's world.
-func _add_bounds_drawer(vp: SubViewport) -> void:
-	var drawer := BoundsDrawer.new()
-	drawer.bounds = _bounds_rect()
-	drawer.z_index = 100
-	vp.add_child(drawer)
-	drawer.queue_redraw()
-
-# Per-car score = number of waypoints that car has hit, plus the Label showing it.
+# Per-car scoring: a car scores one point each time it has cleared *all* of the
+# map's waypoints. _hit_waypoints tracks which waypoint indices a car has cleared
+# in the current lap; once it holds them all we bump the score, then reset the lap
+# so the car can score again by clearing every waypoint once more.
 var _scores := {}
 var _score_labels := {}
+var _hit_waypoints := {}
+var _waypoint_total := 0
+
+# First car to reach this many points wins the race.
+const WIN_SCORE := 3
+# Set once a winner is decided so further waypoint hits are ignored.
+var _game_over := false
 
 func _register_score(c: Car, label: Label) -> void:
 	_scores[c] = 0
+	_hit_waypoints[c] = {}
 	_score_labels[c] = label
 	_update_score_label(c)
 
 func _update_score_label(c: Car) -> void:
 	var label: Label = _score_labels[c]
-	label.text = "%s — Waypoints: %d" % [c.fetch_car_name(), _scores[c]]
+	var hits: int = _hit_waypoints[c].size()
+	label.text = "%s — Score: %d  (%d/%d)" % [c.fetch_car_name(), _scores[c], hits, _waypoint_total]
 
 func _on_waypoint_entered(body: Node2D, index: int) -> void:
+	if _game_over:
+		return
 	var car := body as Car
 	if car == null:
 		return
-	if _scores.has(car):
+	if not _hit_waypoints.has(car):
+		return
+	# A dictionary keyed by waypoint index acts as a set, so re-hitting the same
+	# waypoint within a lap doesn't count twice.
+	var hits: Dictionary = _hit_waypoints[car]
+	hits[index] = true
+	# All waypoints cleared -> score a point and reset for another lap.
+	if _waypoint_total > 0 and hits.size() >= _waypoint_total:
 		_scores[car] += 1
-		_update_score_label(car)
-	print("Entered waypoint ", index, " -> ", car.fetch_car_name(), " score ", _scores.get(car, 0))
+		hits.clear()
+		print(car.fetch_car_name(), " cleared all waypoints -> score ", _scores[car])
+	_update_score_label(car)
+	# First car to reach WIN_SCORE wins the race.
+	if _scores[car] >= WIN_SCORE:
+		_show_winner(car)
+
+
+# Freezes the race and shows a full-screen "<car> Wins!" overlay with a button to
+# play again. The overlay lives on its own CanvasLayer set to PROCESS_MODE_ALWAYS
+# so its button still responds while the rest of the tree is paused.
+func _show_winner(winner: Car) -> void:
+	_game_over = true
+	get_tree().paused = true
+
+	var layer := CanvasLayer.new()
+	layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	layer.layer = 100  # Sit above the split-screen HUD.
+	add_child(layer)
+
+	var bg := ColorRect.new()
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bg.color = Color(0.05, 0.05, 0.08, 0.85)
+	layer.add_child(bg)
+
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	layer.add_child(center)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 16)
+	center.add_child(vbox)
+
+	var title := Label.new()
+	title.text = "%s Wins!" % winner.fetch_car_name()
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 48)
+	vbox.add_child(title)
+
+	var subtitle := Label.new()
+	subtitle.text = "First to %d points" % WIN_SCORE
+	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(subtitle)
+
+	var again := Button.new()
+	again.text = "Play Again"
+	again.pressed.connect(_on_play_again_pressed)
+	vbox.add_child(again)
+
+# Unpauses and reloads the scene, which drops the player back at the car/map menu.
+func _on_play_again_pressed() -> void:
+	get_tree().paused = false
+	get_tree().reload_current_scene()
 
 
 func _bounds_rect() -> Rect2:
