@@ -166,6 +166,9 @@ func _show_menu() -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(title)
 
+	# Show players how to drive and how to win before they start.
+	_add_controls_help(vbox)
+
 	# Player 1 defaults to car index 1 and Player 2 to index 0, matching the
 	# selections this game used before the menu existed.
 	_p1_option = _add_menu_row(vbox, "Player 1 Car")
@@ -179,6 +182,38 @@ func _show_menu() -> void:
 	start_button.text = "Start"
 	start_button.pressed.connect(_on_start_pressed)
 	vbox.add_child(start_button)
+
+# Adds a "How to Play" block: the objective plus each player's keys. The player
+# colors match the split-screen frames (Car 1 = cyan, Car 2 = orange) and the
+# keys match the controllers wired up in _start_race.
+func _add_controls_help(parent: Control) -> void:
+	var heading := Label.new()
+	heading.text = "How to Play"
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.add_theme_font_size_override("font_size", 20)
+	parent.add_child(heading)
+
+	var objective := Label.new()
+	objective.text = "Drive through every waypoint to score a lap. First to %d wins!" % WIN_SCORE
+	objective.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	parent.add_child(objective)
+
+	var p1 := Label.new()
+	p1.text = "Player 1 (cyan):   Arrow Keys   —   ↑ accelerate    ↓ brake    ← → steer"
+	p1.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	p1.add_theme_color_override("font_color", Color.CYAN)
+	parent.add_child(p1)
+
+	var p2 := Label.new()
+	p2.text = "Player 2 (orange):   W A S D   —   W accelerate    S brake    A D steer"
+	p2.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	p2.add_theme_color_override("font_color", Color.ORANGE)
+	parent.add_child(p2)
+
+	# A little breathing room before the car/map pickers.
+	var spacer := Control.new()
+	spacer.custom_minimum_size = Vector2(0, 8)
+	parent.add_child(spacer)
 
 # Adds a "<label> + OptionButton" row to the menu and returns the OptionButton.
 func _add_menu_row(parent: Control, label_text: String) -> OptionButton:

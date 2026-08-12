@@ -59,8 +59,8 @@ func _update_action_sounds() -> void:
 	if turning and not _was_turning:
 		# Quick upward blip.
 		_sfx.play_notes([
-			{"freq": 660.0, "dur": 0.05, "wave": ToneGenerator.SQUARE, "amp": 0.25},
-			{"freq": 880.0, "dur": 0.05, "wave": ToneGenerator.SQUARE, "amp": 0.25},
+			{"freq": 899.0, "dur": 0.10, "wave": ToneGenerator.SINE, "amp": 0.25},
+			{"freq": 899.0, "dur": 0.10, "wave": ToneGenerator.SINE, "amp": 0.25},
 		])
 	_was_turning = turning
 
