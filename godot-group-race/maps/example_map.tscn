@@ -4,63 +4,48 @@
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_1vxqo"]
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_vbar"]
+size = Vector2(20, 256)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hbar"]
+size = Vector2(256, 20)
+
 [node name="ExampleMap" type="Node2D" unique_id=644810168]
 script = ExtResource("1_bvkvv")
-map_bounds = Vector2(1000, 600)
-
-[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=1728020905]
-position = Vector2(490, 164)
-
-[node name="Polygon2D" type="Polygon2D" parent="StaticBody2D" unique_id=434521633]
-polygon = PackedVector2Array(-7, 20, -3, 123, -2, 300, 37, 324, 95, 364, 99, 239, 110, 19, 97, -25, 42, -38)
-
-[node name="Polygon2D2" type="CollisionPolygon2D" parent="StaticBody2D" unique_id=1530279706]
-polygon = PackedVector2Array(-7, 20, -3, 123, -2, 300, 37, 324, 95, 364, 99, 239, 110, 19, 97, -25, 42, -38)
-
-[node name="Waypoint" type="Area2D" parent="." unique_id=472245020 groups=["waypoint"]]
-position = Vector2(732, 462)
-
-[node name="Polygon2D" type="Polygon2D" parent="Waypoint" unique_id=601340880]
-polygon = PackedVector2Array(3, -28, 26, -27, 24, 23, -2, 22, -13, 22, -13, -34)
-
-[node name="Polygon2D2" type="CollisionPolygon2D" parent="Waypoint" unique_id=1132189905]
-polygon = PackedVector2Array(3, -28, 26, -27, 24, 23, -2, 22, -13, 22, -13, -34)
-
-[node name="Waypoint2" type="Area2D" parent="." unique_id=1178142154 groups=["waypoint"]]
-position = Vector2(306, 194)
-
-[node name="Polygon2D" type="Polygon2D" parent="Waypoint2" unique_id=39326842]
-polygon = PackedVector2Array(3, -28, 26, -27, 24, 23, -2, 22, -13, 22, -13, -34)
-
-[node name="Polygon2D2" type="CollisionPolygon2D" parent="Waypoint2" unique_id=1149135976]
-polygon = PackedVector2Array(3, -28, 26, -27, 24, 23, -2, 22, -13, 22, -13, -34)
-
-[node name="Waypoint3" type="Area2D" parent="." unique_id=295230193 groups=["waypoint"]]
-position = Vector2(312, 507)
-
-[node name="Polygon2D" type="Polygon2D" parent="Waypoint3" unique_id=28648766]
-polygon = PackedVector2Array(3, -28, 26, -27, 24, 23, -2, 22, -13, 22, -13, -34)
-
-[node name="Polygon2D2" type="CollisionPolygon2D" parent="Waypoint3" unique_id=136442466]
-polygon = PackedVector2Array(3, -28, 26, -27, 24, 23, -2, 22, -13, 22, -13, -34)
-
-[node name="Waypoint4" type="Area2D" parent="." unique_id=2015908724 groups=["waypoint"]]
-position = Vector2(747, 211)
-
-[node name="Polygon2D" type="Polygon2D" parent="Waypoint4" unique_id=1042425518]
-polygon = PackedVector2Array(3, -28, 26, -27, 24, 23, -2, 22, -13, 22, -13, -34)
-
-[node name="Polygon2D2" type="CollisionPolygon2D" parent="Waypoint4" unique_id=229353047]
-polygon = PackedVector2Array(3, -28, 26, -27, 24, 23, -2, 22, -13, 22, -13, -34)
+map_bounds = Vector2(1792, 1280)
 
 [node name="Start1" type="Area2D" parent="." unique_id=1128944366 groups=["start"]]
-position = Vector2(366, 575)
+position = Vector2(768, 1152)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Start1" unique_id=344863359]
 shape = SubResource("CircleShape2D_1vxqo")
 
 [node name="Start2" type="Area2D" parent="." unique_id=630725092 groups=["start"]]
-position = Vector2(470, 579)
+position = Vector2(1024, 1152)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Start2" unique_id=1386278591]
 shape = SubResource("CircleShape2D_1vxqo")
+
+[node name="WaypointTop" type="Area2D" parent="." unique_id=201000001 groups=["waypoint"]]
+position = Vector2(896, 128)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="WaypointTop" unique_id=201000002]
+shape = SubResource("RectangleShape2D_vbar")
+
+[node name="WaypointRight" type="Area2D" parent="." unique_id=201000003 groups=["waypoint"]]
+position = Vector2(1664, 640)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="WaypointRight" unique_id=201000004]
+shape = SubResource("RectangleShape2D_hbar")
+
+[node name="WaypointBottom" type="Area2D" parent="." unique_id=201000005 groups=["waypoint"]]
+position = Vector2(896, 1152)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="WaypointBottom" unique_id=201000006]
+shape = SubResource("RectangleShape2D_vbar")
+
+[node name="WaypointLeft" type="Area2D" parent="." unique_id=201000007 groups=["waypoint"]]
+position = Vector2(128, 640)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="WaypointLeft" unique_id=201000008]
+shape = SubResource("RectangleShape2D_hbar")
