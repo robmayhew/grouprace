@@ -438,9 +438,22 @@ func load_packed_scene(dir_path:String) -> Array[PackedScene]:
 		push_error("An error occurred when trying to access the path: " + dir_path)
 	return result
 	
-func power_up_hit():
-	for car in tracked_cars:
-		var c = car as Car
-		print('Will power up ' );
-		c.engine_base_hz = 100
-	pass
+func power_up_hit(info: PowerUpHitInfo):
+	var c := info.car
+	if c == null:
+		push_warning("Power up hit but no car resolved")
+		return
+	var effect := info.effect
+	if effect == null:
+		return
+	print("%s hit a power up: kind=%s magnitude=%.1f duration=%.1fs" % [
+		c.car_name, effect.kind, effect.magnitude, effect.duration])
+	match effect.kind:
+		PowerUpEffect.Kind.ENGINE_REV:
+			c.engine_base_hz += effect.magnitude
+		PowerUpEffect.Kind.SPEED_BOOST:
+			c.apply_speed_boost(effect.magnitude, effect.duration)
+		PowerUpEffect.Kind.SLOW:
+			pass
+		PowerUpEffect.Kind.SHIELD:
+			pass

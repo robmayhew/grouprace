@@ -9,6 +9,23 @@ var car_name:String = "Give Me A name"
 # never any other car's controls.
 var controller: CarController
 
+# --- Power-ups ------------------------------------------------------------
+# Multiplier applied to this car's speed. 1.0 = normal. Each car subclass reads
+# this when computing its velocity, so power-ups affect every car type uniformly.
+var speed_multiplier := 1.0
+
+
+# Temporarily scale this car's speed by `multiplier` for `duration` seconds, then
+# undo exactly this boost. Reverting by dividing (rather than resetting to 1.0)
+# keeps overlapping boosts independent, so one expiring doesn't cancel another.
+func apply_speed_boost(multiplier: float, duration: float) -> void:
+	speed_multiplier *= multiplier
+	print("Speed boost applied")
+	await get_tree().create_timer(duration).timeout
+	if is_instance_valid(self):
+		speed_multiplier /= multiplier
+		print("Speed boost removed")
+
 # --- Sound ----------------------------------------------------------------
 # All car audio is synthesized at runtime (see ToneGenerator) — no sample files.
 # The engine is a continuous drone whose frequency rises with speed; turning and

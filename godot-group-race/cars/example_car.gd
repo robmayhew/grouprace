@@ -39,7 +39,7 @@ func _get_input() -> void:
 	var throttle := controller.get_throttle()
 	var brake := controller.get_brake()
 	if throttle > 0.0:
-		acceleration = transform.x * engine_power * throttle
+		acceleration = transform.x * engine_power * throttle * speed_multiplier
 	if brake > 0.0:
 		acceleration = transform.x * braking * brake
 

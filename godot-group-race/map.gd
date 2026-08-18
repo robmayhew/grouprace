@@ -15,7 +15,7 @@ const WALL_THICKNESS := 40.0
 @export var bounds_color: Color = Color.RED
 @export var bounds_width: float = 4.0
 
-signal power_up_hit_by
+signal power_up_hit_by(info: PowerUpHitInfo)
 
 # --- Sound ----------------------------------------------------------------
 # Map event sounds are synthesized at runtime (see ToneGenerator) — no sample

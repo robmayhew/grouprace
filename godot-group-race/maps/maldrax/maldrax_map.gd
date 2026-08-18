@@ -57,9 +57,11 @@ func spawn_object() -> void:
 	var new_entity: Node2D = entity_to_spawn.instantiate()
 	last_spawn = new_entity
 	var pu = new_entity as PowerUp
-	pu.power_up_hit.connect(func():
+	pu.power_up_hit.connect(func(info: PowerUpHitInfo):
 		print("Hit power up")
-		last_spawn = null		
+		last_spawn = null
+		# Bubble the payload up to main.gd via map.gd's signal.
+		power_up_hit_by.emit(info)
 		)
 	# 4. Position the instance and add it to the scene tree
 	new_entity.global_position = random_position
