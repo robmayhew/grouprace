@@ -15,6 +15,8 @@ const WALL_THICKNESS := 40.0
 @export var bounds_color: Color = Color.RED
 @export var bounds_width: float = 4.0
 
+signal power_up_hit_by
+
 # --- Sound ----------------------------------------------------------------
 # Map event sounds are synthesized at runtime (see ToneGenerator) — no sample
 # files. main.gd calls the play_* methods below at the matching moments.

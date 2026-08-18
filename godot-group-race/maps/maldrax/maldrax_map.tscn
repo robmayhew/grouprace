@@ -400,3 +400,12 @@ position = Vector2(2639, 2153)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Waypoint2" unique_id=1273711354]
 position = Vector2(0, 89)
 shape = SubResource("RectangleShape2D_g8b3a")
+
+[node name="Spawner" type="Node2D" parent="." unique_id=450700661]
+position = Vector2(418, 2886)
+
+[node name="SpawnZone" type="ReferenceRect" parent="Spawner" unique_id=1509075982]
+offset_left = 9.0
+offset_top = 2.0
+offset_right = 3816.0
+offset_bottom = 238.0

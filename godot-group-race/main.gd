@@ -62,6 +62,8 @@ func _start_race(car1_scene: PackedScene, car2_scene: PackedScene, map_scene: Pa
 	_map = map
 	# Race is underway -> play the map's start sound.
 	map.play_start_sound()
+	
+	map.power_up_hit_by.connect(power_up_hit)
 
 	# The map draws its own bounds outline (see Map._draw); we still read the
 	# size here for the out-of-bounds gameplay checks below.
@@ -435,3 +437,10 @@ func load_packed_scene(dir_path:String) -> Array[PackedScene]:
 	else:
 		push_error("An error occurred when trying to access the path: " + dir_path)
 	return result
+	
+func power_up_hit():
+	for car in tracked_cars:
+		var c = car as Car
+		print('Will power up ' );
+		c.engine_base_hz = 100
+	pass
