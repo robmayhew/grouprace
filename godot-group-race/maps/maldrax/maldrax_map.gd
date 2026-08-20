@@ -57,6 +57,9 @@ func spawn_object() -> void:
 	var new_entity: Node2D = entity_to_spawn.instantiate()
 	last_spawn = new_entity
 	var pu = new_entity as PowerUp
+	pu.effect = PowerUpEffect.new()
+	pu.effect.kind = PowerUpEffect.Kind.SHIELD
+	
 	pu.power_up_hit.connect(func(info: PowerUpHitInfo):
 		print("Hit power up")
 		last_spawn = null

@@ -33,7 +33,7 @@ func _get_input() -> void:
 		return
 
 	# Steering: only sets which way the front wheels point.
-	steer_direction = controller.get_steering() * deg_to_rad(steering_angle)
+	steer_direction = controller.get_steering() * deg_to_rad(steering_angle * steer_multiplier)
 
 	# Throttle / brake act along the car's forward axis (+X).
 	var throttle := controller.get_throttle()

@@ -456,4 +456,5 @@ func power_up_hit(info: PowerUpHitInfo):
 		PowerUpEffect.Kind.SLOW:
 			pass
 		PowerUpEffect.Kind.SHIELD:
+			c.apply_steer_bost(effect.magnitude, effect.duration)
 			pass

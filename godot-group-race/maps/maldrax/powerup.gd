@@ -22,7 +22,7 @@ func _process(delta: float) -> void:
 func _on_area_2d_area_entered(area: Area2D) -> void:
 	print("POWER UP")
 	var car := _find_car(area)
-	var info := PowerUpHitInfo.new(self, car, PowerUpEffect.new())
+	var info := PowerUpHitInfo.new(self, car, effect)
 	power_up_hit.emit(info)
 	queue_free()
 
