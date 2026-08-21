@@ -57,8 +57,8 @@ func spawn_object() -> void:
 	var new_entity: Node2D = entity_to_spawn.instantiate()
 	last_spawn = new_entity
 	var pu = new_entity as PowerUp
-	pu.effect = PowerUpEffect.new()
-	pu.effect.kind = PowerUpEffect.Kind.SHIELD
+	pu.effect = _random_effect()
+
 	
 	pu.power_up_hit.connect(func(info: PowerUpHitInfo):
 		print("Hit power up")
@@ -68,4 +68,27 @@ func spawn_object() -> void:
 		)
 	# 4. Position the instance and add it to the scene tree
 	new_entity.global_position = random_position
-	get_parent().add_child(new_entity) 
+	get_parent().add_child(new_entity)
+
+# Builds a randomly-chosen powerup effect. magnitude means different things per
+# kind (see main.gd's power_up_hit): a speed/steer multiplier, a slowdown factor,
+# or a damage amount — so each kind gets its own sensible value.
+func _random_effect() -> PowerUpEffect:
+	var kinds := PowerUpEffect.Kind.values()
+	var kind: int = kinds[randi() % kinds.size()]
+	var effect := PowerUpEffect.new()
+	effect.kind = kind
+	match kind:
+		PowerUpEffect.Kind.SPEED_BOOST:
+			effect.magnitude = 2.0   # 2x speed
+			effect.duration = 5.0
+		PowerUpEffect.Kind.FIRE:
+			effect.magnitude = 3.0   # damage dealt
+			effect.duration = 0.0
+		PowerUpEffect.Kind.OIL_SLICK:
+			effect.magnitude = 0.5   # half speed
+			effect.duration = 3.0
+		PowerUpEffect.Kind.SHIELD:
+			effect.magnitude = 1.5   # steer boost
+			effect.duration = 8.0
+	return effect

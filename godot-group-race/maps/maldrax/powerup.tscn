@@ -16,14 +16,12 @@ size = Vector2(42, 40)
 script = ExtResource("1_74led")
 effect = SubResource("Resource_74led")
 
-[node name="ColorRect" type="ColorRect" parent="." unique_id=1688197751]
-offset_right = 40.0
-offset_bottom = 40.0
-
 [node name="Area2D" type="Area2D" parent="." unique_id=1728247346]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1306068057]
 position = Vector2(20, 20)
 shape = SubResource("RectangleShape2D_lkmpl")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=237431080]
 
 [connection signal="area_entered" from="Area2D" to="." method="_on_area_2d_area_entered"]

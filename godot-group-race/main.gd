@@ -118,8 +118,10 @@ func _start_race(car1_scene: PackedScene, car2_scene: PackedScene, map_scene: Pa
 	var start_positions:Array[Area2D] = map.fetch_start_positions()
 	var start1 = start_positions.get(0)
 	car.position = start1.position
+	car.rotation = start1.rotation
 	var start2 = start_positions.get(1)
 	car2.position = start2.position
+	car2.rotation = start2.rotation
 
 
 # --- Startup menu ---------------------------------------------------------
@@ -449,12 +451,13 @@ func power_up_hit(info: PowerUpHitInfo):
 	print("%s hit a power up: kind=%s magnitude=%.1f duration=%.1fs" % [
 		c.car_name, effect.kind, effect.magnitude, effect.duration])
 	match effect.kind:
-		PowerUpEffect.Kind.ENGINE_REV:
-			c.engine_base_hz += effect.magnitude
 		PowerUpEffect.Kind.SPEED_BOOST:
 			c.apply_speed_boost(effect.magnitude, effect.duration)
-		PowerUpEffect.Kind.SLOW:
-			pass
+		PowerUpEffect.Kind.FIRE:
+			# Offensive pickup: singes the car, adding to its damage tally.
+			c.apply_damage(c.fetch_damange() + int(effect.magnitude))
+		PowerUpEffect.Kind.OIL_SLICK:
+			# Hazard: temporarily scales speed (magnitude < 1 slows the car down).
+			c.apply_speed_boost(effect.magnitude, effect.duration)
 		PowerUpEffect.Kind.SHIELD:
 			c.apply_steer_bost(effect.magnitude, effect.duration)
-			pass

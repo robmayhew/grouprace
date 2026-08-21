@@ -7,7 +7,7 @@ extends Car
 @export var friction := -55.0           # constant slowdown
 @export var drag := -0.06               # slowdown that grows with speed
 @export var wheel_base := 70.0          # distance between front and rear axle (px)
-@export var steering_angle := 15.0      # how far the front wheels turn (degrees)
+@export var steering_angle := 30.0      # how far the front wheels turn (degrees)
 @export var slip_speed := 400.0         # speed at which the car starts to slide
 @export var traction_slow := 10.0       # grip at low speed
 @export var traction_fast := 2.5        # grip at high speed

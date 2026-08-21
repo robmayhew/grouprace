@@ -372,12 +372,14 @@ tile_set = SubResource("TileSet_1vxqo")
 
 [node name="start1" type="Area2D" parent="." unique_id=234461210 groups=["start"]]
 position = Vector2(217, 561)
+rotation = 1.5707964
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="start1" unique_id=1522480612]
 shape = SubResource("RectangleShape2D_1vxqo")
 
 [node name="start2" type="Area2D" parent="." unique_id=458102899 groups=["start"]]
 position = Vector2(284, 324)
+rotation = 1.5707964
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="start2" unique_id=748436983]
 shape = SubResource("RectangleShape2D_1vxqo")
