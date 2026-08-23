@@ -15,6 +15,8 @@ const WALL_THICKNESS := 40.0
 @export var bounds_color: Color = Color.RED
 @export var bounds_width: float = 4.0
 
+signal power_up_hit_by(info: PowerUpHitInfo)
+
 # --- Sound ----------------------------------------------------------------
 # Map event sounds are synthesized at runtime (see ToneGenerator) — no sample
 # files. main.gd calls the play_* methods below at the matching moments.
@@ -74,6 +76,10 @@ func _draw() -> void:
 func fetch_waypoints() -> Array[Area2D]:
 	push_error("No waypoint defined")
 	return []
+
+func fetch_start_finish_line() -> Area2D:
+	push_error("No start/finish line defined")
+	return null
 
 func fetch_start_positions() -> Array[Area2D]:
 	push_error("No start positions defined")

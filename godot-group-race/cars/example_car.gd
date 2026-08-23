@@ -7,7 +7,7 @@ extends Car
 @export var friction := -55.0           # constant slowdown
 @export var drag := -0.06               # slowdown that grows with speed
 @export var wheel_base := 70.0          # distance between front and rear axle (px)
-@export var steering_angle := 15.0      # how far the front wheels turn (degrees)
+@export var steering_angle := 30.0      # how far the front wheels turn (degrees)
 @export var slip_speed := 400.0         # speed at which the car starts to slide
 @export var traction_slow := 10.0       # grip at low speed
 @export var traction_fast := 2.5        # grip at high speed
@@ -33,13 +33,13 @@ func _get_input() -> void:
 		return
 
 	# Steering: only sets which way the front wheels point.
-	steer_direction = controller.get_steering() * deg_to_rad(steering_angle)
+	steer_direction = controller.get_steering() * deg_to_rad(steering_angle * steer_multiplier)
 
 	# Throttle / brake act along the car's forward axis (+X).
 	var throttle := controller.get_throttle()
 	var brake := controller.get_brake()
 	if throttle > 0.0:
-		acceleration = transform.x * engine_power * throttle
+		acceleration = transform.x * engine_power * throttle * speed_multiplier
 	if brake > 0.0:
 		acceleration = transform.x * braking * brake
 

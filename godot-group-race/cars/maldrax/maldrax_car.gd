@@ -15,7 +15,7 @@ func _physics_process(_delta: float) -> void:
 	_handle_turning()
 	# Always drive straight ahead along the current heading.
 	if moving:
-		velocity = transform.x * cruise_speed
+		velocity = transform.x * cruise_speed * speed_multiplier
 	else:
 		velocity = Vector2.ZERO
 		
