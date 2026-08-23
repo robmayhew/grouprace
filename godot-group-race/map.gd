@@ -77,6 +77,10 @@ func fetch_waypoints() -> Array[Area2D]:
 	push_error("No waypoint defined")
 	return []
 
+func fetch_start_finish_line() -> Area2D:
+	push_error("No start/finish line defined")
+	return null
+
 func fetch_start_positions() -> Array[Area2D]:
 	push_error("No start positions defined")
 	return []

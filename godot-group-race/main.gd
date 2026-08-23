@@ -115,6 +115,9 @@ func _start_race(car1_scene: PackedScene, car2_scene: PackedScene, map_scene: Pa
 		# bind(i) passes the waypoint index to the callback so we know which one.
 		waypoints[i].body_entered.connect(_on_waypoint_entered.bind(i))
 
+	var start_finish_line: Area2D = map.fetch_start_finish_line()
+	start_finish_line.body_entered.connect(on_start_finish_line_entered)
+
 	var start_positions:Array[Area2D] = map.fetch_start_positions()
 	var start1 = start_positions.get(0)
 	car.position = start1.position
@@ -198,7 +201,7 @@ func _add_controls_help(parent: Control) -> void:
 	parent.add_child(heading)
 
 	var objective := Label.new()
-	objective.text = "Drive through every waypoint to score a lap. First to %d wins!" % WIN_SCORE
+	objective.text = "Complete laps, First to %d wins!" % WIN_SCORE
 	objective.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	parent.add_child(objective)
 
@@ -307,8 +310,7 @@ func _register_score(c: Car, label: Label) -> void:
 
 func _update_score_label(c: Car) -> void:
 	var label: Label = _score_labels[c]
-	var hits: int = _hit_waypoints[c].size()
-	label.text = "%s — Score: %d  (%d/%d)" % [c.fetch_car_name(), _scores[c], hits, _waypoint_total]
+	label.text = "%s — Score: %d" % [c.fetch_car_name(), _scores[c]]
 
 func _on_waypoint_entered(body: Node2D, index: int) -> void:
 	if _game_over:
@@ -322,6 +324,14 @@ func _on_waypoint_entered(body: Node2D, index: int) -> void:
 	# waypoint within a lap doesn't count twice.
 	var hits: Dictionary = _hit_waypoints[car]
 	hits[index] = true
+		
+func on_start_finish_line_entered(body: Node2D) -> void:
+	var car := body as Car
+	if car == null:
+		return
+	print(car.fetch_car_name(), " crossed the start/finish line")
+	var hits: Dictionary = _hit_waypoints[car]
+	
 	# All waypoints cleared -> score a point and reset for another lap.
 	if _waypoint_total > 0 and hits.size() >= _waypoint_total:
 		_scores[car] += 1
@@ -332,9 +342,11 @@ func _on_waypoint_entered(body: Node2D, index: int) -> void:
 		if _map and _scores[car] < WIN_SCORE:
 			_map.play_lap_sound()
 	_update_score_label(car)
+
 	# First car to reach WIN_SCORE wins the race.
 	if _scores[car] >= WIN_SCORE:
 		_show_winner(car)
+
 
 
 # Freezes the race and shows a full-screen "<car> Wins!" overlay with a button to
@@ -430,10 +442,11 @@ func load_packed_scene(dir_path:String) -> Array[PackedScene]:
 					result.append_array(load_packed_scene(dir_path.path_join(file_name)))
 			elif file_name.ends_with(".tscn"):
 				var scene_path := ("res://" + dir_path).path_join(file_name)
-				var packed_scene: PackedScene = load(scene_path)
-				result.append(packed_scene)
+				var packed_scene: PackedScene = load(scene_path)			
 				var instance: Node = packed_scene.instantiate()
-				instances.append(instance)
+				if instance is Car or instance is Map:
+					instances.append(instance)
+					result.append(packed_scene)
 			file_name = dir.get_next()
 		dir.list_dir_end()
 	else:

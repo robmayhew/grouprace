@@ -41,6 +41,9 @@ func fetch_start_positions() -> Array[Area2D]:
 		result.append(n)
 	return result
 
+func fetch_start_finish_line() -> Area2D:
+	return $StartFinishLine
+
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	#build_track()
