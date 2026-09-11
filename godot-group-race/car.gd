@@ -42,7 +42,7 @@ func apply_steer_bost(multiplier: float, duration: float) -> void:
 @export var engine_base_hz := 60.0             # engine drone frequency at engine_pitch_min
 @export var engine_pitch_min := 0.8            # pitch factor at a standstill
 @export var engine_pitch_max := 2.0            # pitch factor at engine_speed_for_max_pitch
-@export var engine_speed_for_max_pitch := 500.0
+@export var engine_speed_for_max_pitch := 2000.0
 @export var steer_sound_threshold := 0.4       # steering magnitude that counts as turning
 
 var _engine: ToneGenerator                     # continuous engine drone

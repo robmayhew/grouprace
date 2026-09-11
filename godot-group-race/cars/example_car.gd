@@ -1,7 +1,7 @@
 extends Car
 
 # --- Tuning ---------------------------------------------------------------
-@export var engine_power := 800.0       # forward acceleration force
+@export var engine_power := 2000.0       # forward acceleration force
 @export var braking := -450.0           # reverse / brake force
 @export var max_speed_reverse := 250.0
 @export var friction := -55.0           # constant slowdown

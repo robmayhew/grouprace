@@ -32,7 +32,7 @@ func _ready() -> void:
 # presses Start in the menu (see _show_menu). Everything here used to live in
 # _ready(); the only difference is the map/car scenes are now passed in instead
 # of being hard-coded.
-func _start_race(car1_scene: PackedScene, car2_scene: PackedScene, map_scene: PackedScene) -> void:
+func _start_race(car1_scene: PackedScene, car2_scene: PackedScene, map_scene: PackedScene, p1_controller: CarController, p2_controller: CarController) -> void:
 	_game_over = false
 	_race_cars.clear()
 	# --- Split-screen plumbing ---------------------------------------------
@@ -86,16 +86,12 @@ func _start_race(car1_scene: PackedScene, car2_scene: PackedScene, map_scene: Pa
 	_register_score(car, half1["score_label"])
 	_register_score(car2, half2["score_label"])
 
-	# Assign each car its own input source. Cars stay agnostic about anyone
-	# else's controls.
-	# Player 1 -> Logitech F310. Set the back switch to "X" (XInput) and plug in
-	# before launching. Steer = left stick, throttle = RT, brake = LT.
-	# car.set_controller(GamepadController.new(0))   # first connected pad
-	# Player 2 -> keyboard (WASD).
-	car2.set_controller(KeyboardController.new(KEY_W, KEY_S, KEY_A, KEY_D))
-
-	# No pad handy? Fall back to a second keyboard scheme:
-	car.set_controller(KeyboardController.new(KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT))
+	# Assign each car the input source the player picked in the menu. Cars stay
+	# agnostic about anyone else's controls. A gamepad controller expects the pad
+	# to be plugged in before launch (for a Logitech F310, set the back switch to
+	# "X"/XInput; steer = left stick, throttle = RT, brake = LT).
+	car.set_controller(p1_controller)
+	car2.set_controller(p2_controller)
 	_car2 = car2
 	vp1.add_child(car2)
 	vp1.add_child(car)
@@ -135,6 +131,38 @@ var _menu_layer: CanvasLayer
 var _p1_option: OptionButton
 var _p2_option: OptionButton
 var _map_option: OptionButton
+var _p1_input_option: OptionButton
+var _p2_input_option: OptionButton
+
+# The input choices offered in the menu: two keyboard schemes plus one entry per
+# connected gamepad. Each entry is a descriptor _make_controller() turns into a
+# live CarController when the race starts. Rebuilt each time the menu is shown so
+# pads plugged in after launch still appear.
+var _input_options: Array = []
+
+# Builds the list of selectable input sources. Keyboard schemes always come
+# first (indices 0 and 1); any connected gamepads follow.
+func _build_input_options() -> void:
+	_input_options = [
+		{ "label": "Keyboard (Arrows)", "kind": "keyboard",
+			"keys": [KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT] },
+		{ "label": "Keyboard (WASD)", "kind": "keyboard",
+			"keys": [KEY_W, KEY_S, KEY_A, KEY_D] },
+	]
+	for device in Input.get_connected_joypads():
+		_input_options.append({
+			"label": "Gamepad %d: %s" % [device, Input.get_joy_name(device)],
+			"kind": "gamepad",
+			"device": device,
+		})
+
+# Turns a menu input selection (index into _input_options) into a controller.
+func _make_controller(index: int) -> CarController:
+	var desc: Dictionary = _input_options[index]
+	if desc["kind"] == "gamepad":
+		return GamepadController.new(desc["device"])
+	var keys: Array = desc["keys"]
+	return KeyboardController.new(keys[0], keys[1], keys[2], keys[3])
 
 # Turns a scene file path into a readable label, e.g.
 # "res://cars/maldrax/maldrax_car.tscn" -> "maldrax_car".
@@ -176,12 +204,22 @@ func _show_menu() -> void:
 	# Show players how to drive and how to win before they start.
 	_add_controls_help(vbox)
 
+	# Refresh the input list so any pad connected after launch is offered.
+	_build_input_options()
+	# When a gamepad is present, hand it to Player 1 by default (index 2 is the
+	# first pad); otherwise fall back to the Arrows keyboard scheme (index 0).
+	# Player 2 defaults to WASD (index 1).
+	var has_gamepad := _input_options.size() > 2
+	var p1_input_default := 2 if has_gamepad else 0
+
 	# Player 1 defaults to car index 1 and Player 2 to index 0, matching the
 	# selections this game used before the menu existed.
 	_p1_option = _add_menu_row(vbox, "Player 1 Car")
 	_populate_options(_p1_option, cars, 1)
+	_p1_input_option = _add_input_row(vbox, "Player 1 Input", p1_input_default)
 	_p2_option = _add_menu_row(vbox, "Player 2 Car")
 	_populate_options(_p2_option, cars, 0)
+	_p2_input_option = _add_input_row(vbox, "Player 2 Input", 1)
 	_map_option = _add_menu_row(vbox, "Map")
 	_populate_options(_map_option, maps, 0)
 
@@ -217,6 +255,11 @@ func _add_controls_help(parent: Control) -> void:
 	p2.add_theme_color_override("font_color", Color.ORANGE)
 	parent.add_child(p2)
 
+	var pad := Label.new()
+	pad.text = "Or pick a gamepad below — steer with the left stick, RT to accelerate, LT to brake."
+	pad.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	parent.add_child(pad)
+
 	# A little breathing room before the car/map pickers.
 	var spacer := Control.new()
 	spacer.custom_minimum_size = Vector2(0, 8)
@@ -238,13 +281,25 @@ func _add_menu_row(parent: Control, label_text: String) -> OptionButton:
 	row.add_child(option)
 	return option
 
+# Adds an input-source picker row, filled from _input_options, and selects the
+# given default (clamped in case a gamepad default isn't actually connected).
+func _add_input_row(parent: Control, label_text: String, default_index: int) -> OptionButton:
+	var option := _add_menu_row(parent, label_text)
+	for desc in _input_options:
+		option.add_item(desc["label"])
+	if _input_options.size() > 0:
+		option.select(clampi(default_index, 0, _input_options.size() - 1))
+	return option
+
 # Reads the selections, tears down the menu, and starts the race.
 func _on_start_pressed() -> void:
 	var p1_idx := _p1_option.selected
 	var p2_idx := _p2_option.selected
 	var map_idx := _map_option.selected
+	var p1_controller := _make_controller(_p1_input_option.selected)
+	var p2_controller := _make_controller(_p2_input_option.selected)
 	_menu_layer.queue_free()
-	_start_race(cars[p1_idx], cars[p2_idx], maps[map_idx])
+	_start_race(cars[p1_idx], cars[p2_idx], maps[map_idx], p1_controller, p2_controller)
 
 
 # Builds one split-screen half: the game view (SubViewport) with a colored frame
