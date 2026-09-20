@@ -1,45 +1,49 @@
 extends Node2D
 
+# Selectable content, discovered by scanning res://cars and res://maps for scenes.
+# `car_instances` / `map_instances` hold one throwaway instance per scene so the
+# menu can read a character's name, stats and preview art without starting a race.
 var cars: Array[PackedScene] = []
 var maps: Array[PackedScene] = []
-var maps_bounds:Vector2 = Vector2(600,800)
+var car_instances: Array[Car] = []
+var map_instances: Array[Map] = []
 
-# Cars we watch against the map bounds, plus their last inside/outside state
-# so we only log the moment they cross out (not every frame).
+var maps_bounds: Vector2 = Vector2(600, 800)
+
+# Cars we watch against the map bounds, plus their last inside/outside state so we
+# only react the moment they cross out (not every frame).
 var tracked_cars: Array[Car] = []
 var _car_inside := {}
 
-# Player 2's camera lives in its own viewport, so it can't just be parented to
-# the car. We keep references and make it follow car2 every frame instead.
+# Player 2's camera lives in its own viewport, so it follows car2 manually.
 var _cam2: Camera2D
 var _car2: Car
 
-# The current map (for its event sounds) and the cars racing on it (so we can
-# silence their engines when the race ends).
+# The current map and the cars racing on it.
 var _map: Map
 var _race_cars: Array[Car] = []
 
-# Called when the node enters the scene tree for the first time.
-func _ready() -> void:
-	cars = load_packed_scene("cars")
-	maps = load_packed_scene("maps")
+# --- Race clock -----------------------------------------------------------
+# Counts up from the green light; each split-screen HUD shows it. Frozen when the
+# race ends because pausing the tree stops this node's _process.
+var _race_time := 0.0
+var _race_running := false
+var _time_labels: Array[Label] = []
 
-	# Let the players pick their cars and a map before building the race.
+
+func _ready() -> void:
+	cars = _load_scenes("cars", car_instances)
+	maps = _load_scenes("maps", map_instances)
 	_show_menu()
 
 
-# Builds and runs the race with the chosen scenes. Called once the player
-# presses Start in the menu (see _show_menu). Everything here used to live in
-# _ready(); the only difference is the map/car scenes are now passed in instead
-# of being hard-coded.
-func _start_race(car1_scene: PackedScene, car2_scene: PackedScene, map_scene: PackedScene) -> void:
+# Builds and runs the race with the chosen scenes.
+func _start_race(car1_scene: PackedScene, car2_scene: PackedScene, map_scene: PackedScene, p1_controller: CarController, p2_controller: CarController) -> void:
 	_game_over = false
 	_race_cars.clear()
-	# --- Split-screen plumbing ---------------------------------------------
-	# Two SubViewports side by side. Each SubViewport renders its own current
-	# Camera2D independently (a single viewport can only show one camera at a
-	# time), which is what makes this a *true* split screen. Both viewports
-	# share the same World2D so they render the exact same game world.
+	_time_labels.clear()
+
+	# --- Split-screen plumbing --------------------------------------------
 	var layer := CanvasLayer.new()
 	add_child(layer)
 
@@ -48,61 +52,44 @@ func _start_race(car1_scene: PackedScene, car2_scene: PackedScene, map_scene: Pa
 	hbox.add_theme_constant_override("separation", 0)
 	layer.add_child(hbox)
 
-	# Each half gets a colored frame + score label. Car 1 = cyan, Car 2 = orange.
 	var half1 := _make_split_viewport(hbox, Color.CYAN)
 	var half2 := _make_split_viewport(hbox, Color.ORANGE)
 	var vp1: SubViewport = half1["viewport"]
 	var vp2: SubViewport = half2["viewport"]
-	# Player 2's viewport renders the same 2D world as player 1's.
 	vp2.world_2d = vp1.get_world_2d()
+	_time_labels = [half1["time_label"], half2["time_label"]]
 
-	# --- Game world (lives inside viewport 1) ------------------------------
+	# --- Game world (lives inside viewport 1) -----------------------------
 	var map = map_scene.instantiate() as Map
 	vp1.add_child(map)
 	_map = map
-	# Race is underway -> play the map's start sound.
 	map.play_start_sound()
-	
 	map.power_up_hit_by.connect(power_up_hit)
-
-	# The map draws its own bounds outline (see Map._draw); we still read the
-	# size here for the out-of-bounds gameplay checks below.
 	maps_bounds = map.fetch_map_bounds()
 
-	# Waypoint scoring: a car scores a point once it has cleared *every* waypoint,
-	# then the lap resets so it can score again by clearing them all once more.
-	# We fetch the list once here and reuse it for the signal wiring below.
 	var waypoints: Array[Area2D] = map.fetch_waypoints()
 	_waypoint_total = waypoints.size()
 
 	var car = car1_scene.instantiate() as Car
 	var car2 = car2_scene.instantiate() as Car
-	car.set_car_name("Car 1")
-	car2.set_car_name("Car 2")
+	car.set_car_name("P1 " + car.character_name)
+	car2.set_car_name("P2 " + car2.character_name)
 	_race_cars.append(car)
 	_race_cars.append(car2)
 
-	# Wire each car to its viewport's score label (waypoints hit, starts at 0).
 	_register_score(car, half1["score_label"])
 	_register_score(car2, half2["score_label"])
 
-	# Assign each car its own input source. Cars stay agnostic about anyone
-	# else's controls.
-	# Player 1 -> Logitech F310. Set the back switch to "X" (XInput) and plug in
-	# before launching. Steer = left stick, throttle = RT, brake = LT.
-	# car.set_controller(GamepadController.new(0))   # first connected pad
-	# Player 2 -> keyboard (WASD).
-	car2.set_controller(KeyboardController.new(KEY_W, KEY_S, KEY_A, KEY_D))
-
-	# No pad handy? Fall back to a second keyboard scheme:
-	car.set_controller(KeyboardController.new(KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT))
+	car.set_controller(p1_controller)
+	car2.set_controller(p2_controller)
 	_car2 = car2
 	vp1.add_child(car2)
 	vp1.add_child(car)
 	_track_car(car)
+	_track_car(car2)
 
-	# Player 1's camera rides along with car1 and is current in viewport 1.
-	var cam:Camera2D = Camera2D.new()
+	# Player 1's camera rides along with car1 in viewport 1.
+	var cam: Camera2D = Camera2D.new()
 	car.add_child(cam)
 	cam.make_current()
 
@@ -112,13 +99,12 @@ func _start_race(car1_scene: PackedScene, car2_scene: PackedScene, map_scene: Pa
 	_cam2.make_current()
 
 	for i in waypoints.size():
-		# bind(i) passes the waypoint index to the callback so we know which one.
 		waypoints[i].body_entered.connect(_on_waypoint_entered.bind(i))
 
 	var start_finish_line: Area2D = map.fetch_start_finish_line()
 	start_finish_line.body_entered.connect(on_start_finish_line_entered)
 
-	var start_positions:Array[Area2D] = map.fetch_start_positions()
+	var start_positions: Array[Area2D] = map.fetch_start_positions()
 	var start1 = start_positions.get(0)
 	car.position = start1.position
 	car.rotation = start1.rotation
@@ -126,35 +112,49 @@ func _start_race(car1_scene: PackedScene, car2_scene: PackedScene, map_scene: Pa
 	car2.position = start2.position
 	car2.rotation = start2.rotation
 
+	# Start the race clock.
+	_race_time = 0.0
+	_race_running = true
+
 
 # --- Startup menu ---------------------------------------------------------
-# The menu lives on its own CanvasLayer so it sits on top of everything. When
-# Start is pressed we free the whole layer and hand the chosen scenes to
-# _start_race. Kept references so the Start handler can read the selections.
 var _menu_layer: CanvasLayer
-var _p1_option: OptionButton
-var _p2_option: OptionButton
+var _p1_pick: Dictionary
+var _p2_pick: Dictionary
 var _map_option: OptionButton
+var _p1_input_option: OptionButton
+var _p2_input_option: OptionButton
 
-# Turns a scene file path into a readable label, e.g.
-# "res://cars/maldrax/maldrax_car.tscn" -> "maldrax_car".
-func _scene_display_name(scene: PackedScene) -> String:
-	return scene.resource_path.get_file().get_basename()
+# Selectable input sources: two keyboard schemes plus one entry per gamepad.
+var _input_options: Array = []
 
-# Fills an OptionButton with one item per scene, then selects a default index
-# (clamped so we never select out of range when there are few scenes).
-func _populate_options(option: OptionButton, scenes: Array[PackedScene], default_index: int) -> void:
-	for scene in scenes:
-		option.add_item(_scene_display_name(scene))
-	if scenes.size() > 0:
-		option.select(clampi(default_index, 0, scenes.size() - 1))
+func _build_input_options() -> void:
+	_input_options = [
+		{ "label": "Keyboard (Arrows)", "kind": "keyboard",
+			"keys": [KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT] },
+		{ "label": "Keyboard (WASD)", "kind": "keyboard",
+			"keys": [KEY_W, KEY_S, KEY_A, KEY_D] },
+	]
+	for device in Input.get_connected_joypads():
+		_input_options.append({
+			"label": "Gamepad %d: %s" % [device, Input.get_joy_name(device)],
+			"kind": "gamepad",
+			"device": device,
+		})
 
-# Builds the car/map selection menu shown at startup.
+func _make_controller(index: int) -> CarController:
+	var desc: Dictionary = _input_options[index]
+	if desc["kind"] == "gamepad":
+		return GamepadController.new(desc["device"])
+	var keys: Array = desc["keys"]
+	return KeyboardController.new(keys[0], keys[1], keys[2], keys[3])
+
+
+# Builds the character / map selection menu shown at startup.
 func _show_menu() -> void:
 	_menu_layer = CanvasLayer.new()
 	add_child(_menu_layer)
 
-	# Opaque backdrop so the (empty) game world behind it doesn't show through.
 	var bg := ColorRect.new()
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.color = Color(0.1, 0.1, 0.12)
@@ -171,28 +171,140 @@ func _show_menu() -> void:
 	var title := Label.new()
 	title.text = "Group Race"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 40)
 	vbox.add_child(title)
 
-	# Show players how to drive and how to win before they start.
 	_add_controls_help(vbox)
 
-	# Player 1 defaults to car index 1 and Player 2 to index 0, matching the
-	# selections this game used before the menu existed.
-	_p1_option = _add_menu_row(vbox, "Player 1 Car")
-	_populate_options(_p1_option, cars, 1)
-	_p2_option = _add_menu_row(vbox, "Player 2 Car")
-	_populate_options(_p2_option, cars, 0)
+	_build_input_options()
+	var has_gamepad := _input_options.size() > 2
+	var p1_input_default := 2 if has_gamepad else 0
+
+	# The two character pickers sit side by side, each with a live preview.
+	var pickers := HBoxContainer.new()
+	pickers.add_theme_constant_override("separation", 40)
+	pickers.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_child(pickers)
+
+	_p1_pick = _build_character_picker(pickers, "Player 1", Color.CYAN, 0)
+	_p2_pick = _build_character_picker(pickers, "Player 2", Color.ORANGE, 1)
+
+	# Input + map rows below the pickers.
+	_p1_input_option = _add_input_row(vbox, "Player 1 Input", p1_input_default)
+	_p2_input_option = _add_input_row(vbox, "Player 2 Input", 1)
 	_map_option = _add_menu_row(vbox, "Map")
-	_populate_options(_map_option, maps, 0)
+	for m in map_instances:
+		_map_option.add_item(m.fetch_map_name())
+	if maps.size() > 0:
+		_map_option.select(0)
 
 	var start_button := Button.new()
-	start_button.text = "Start"
+	start_button.text = "Start Race"
+	start_button.add_theme_font_size_override("font_size", 22)
 	start_button.pressed.connect(_on_start_pressed)
 	vbox.add_child(start_button)
 
-# Adds a "How to Play" block: the objective plus each player's keys. The player
-# colors match the split-screen frames (Car 1 = cyan, Car 2 = orange) and the
-# keys match the controllers wired up in _start_race.
+
+# One player's character picker: a name dropdown, an art preview and stat bars,
+# all kept in sync when the selection changes. Returns { "option": OptionButton }.
+func _build_character_picker(parent: Control, player_label: String, accent: Color, default_index: int) -> Dictionary:
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 6)
+	col.custom_minimum_size = Vector2(240, 0)
+	parent.add_child(col)
+
+	var heading := Label.new()
+	heading.text = player_label
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.add_theme_font_size_override("font_size", 22)
+	heading.add_theme_color_override("font_color", accent)
+	col.add_child(heading)
+
+	var option := OptionButton.new()
+	for inst in car_instances:
+		option.add_item(inst.character_name)
+	col.add_child(option)
+
+	# Framed art preview.
+	var frame := PanelContainer.new()
+	var fstyle := StyleBoxFlat.new()
+	fstyle.bg_color = Color(0.14, 0.14, 0.17)
+	fstyle.border_color = accent
+	fstyle.set_border_width_all(3)
+	fstyle.set_corner_radius_all(8)
+	frame.add_theme_stylebox_override("panel", fstyle)
+	col.add_child(frame)
+
+	var preview := TextureRect.new()
+	preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	preview.custom_minimum_size = Vector2(220, 120)
+	frame.add_child(preview)
+
+	# Four stat bars: Speed, Acceleration, Turn, Recovery.
+	var stats := VBoxContainer.new()
+	stats.add_theme_constant_override("separation", 2)
+	col.add_child(stats)
+	var fills := {
+		"speed": _make_stat_bar(stats, "Speed", accent),
+		"acceleration": _make_stat_bar(stats, "Acceleration", accent),
+		"turn": _make_stat_bar(stats, "Turn", accent),
+		"recovery": _make_stat_bar(stats, "Recovery", accent),
+	}
+
+	var ctx := { "option": option, "preview": preview, "fills": fills }
+	option.item_selected.connect(func(idx): _refresh_picker(ctx))
+	if car_instances.size() > 0:
+		option.select(clampi(default_index, 0, car_instances.size() - 1))
+	_refresh_picker(ctx)
+	return ctx
+
+
+# Builds one labelled stat bar and returns the fill rect (resized in _refresh_picker).
+func _make_stat_bar(parent: Control, label_text: String, accent: Color) -> ColorRect:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	parent.add_child(row)
+
+	var label := Label.new()
+	label.text = label_text
+	label.custom_minimum_size = Vector2(96, 0)
+	label.add_theme_font_size_override("font_size", 13)
+	row.add_child(label)
+
+	var track := ColorRect.new()
+	track.color = Color(0.25, 0.25, 0.3)
+	track.custom_minimum_size = Vector2(120, 12)
+	row.add_child(track)
+
+	var fill := ColorRect.new()
+	fill.color = accent
+	fill.position = Vector2(0, 0)
+	fill.size = Vector2(0, 12)
+	track.add_child(fill)
+	return fill
+
+
+# Refreshes a picker's preview art and stat bars to match its selected character.
+func _refresh_picker(ctx: Dictionary) -> void:
+	var idx: int = ctx["option"].selected
+	if idx < 0 or idx >= car_instances.size():
+		return
+	var c: Car = car_instances[idx]
+	ctx["preview"].texture = c.get_selection_texture()
+	var fills: Dictionary = ctx["fills"]
+	_set_stat_fill(fills["speed"], c.speed)
+	_set_stat_fill(fills["acceleration"], c.acceleration)
+	_set_stat_fill(fills["turn"], c.turn)
+	_set_stat_fill(fills["recovery"], c.recovery_time)
+
+func _set_stat_fill(fill: ColorRect, stat_value: float) -> void:
+	# Stats are 1..10 (higher is better, recovery included); bar width tracks that.
+	var t := clampf(stat_value / 10.0, 0.0, 1.0)
+	fill.size = Vector2(120.0 * t, 12)
+
+
+# Adds a "How to Play" block.
 func _add_controls_help(parent: Control) -> void:
 	var heading := Label.new()
 	heading.text = "How to Play"
@@ -201,31 +313,36 @@ func _add_controls_help(parent: Control) -> void:
 	parent.add_child(heading)
 
 	var objective := Label.new()
-	objective.text = "Complete laps, First to %d wins!" % WIN_SCORE
+	objective.text = "Pick a character and a map, then race — first to %d laps wins!" % WIN_SCORE
 	objective.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	parent.add_child(objective)
 
 	var p1 := Label.new()
-	p1.text = "Player 1 (cyan):   Arrow Keys   —   ↑ accelerate    ↓ brake    ← → steer"
+	p1.text = "Player 1 (cyan):   Arrow Keys   —   ↑ gas    ↓ brake    ← → steer"
 	p1.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	p1.add_theme_color_override("font_color", Color.CYAN)
 	parent.add_child(p1)
 
 	var p2 := Label.new()
-	p2.text = "Player 2 (orange):   W A S D   —   W accelerate    S brake    A D steer"
+	p2.text = "Player 2 (orange):   W A S D   —   W gas    S brake    A D steer"
 	p2.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	p2.add_theme_color_override("font_color", Color.ORANGE)
 	parent.add_child(p2)
 
-	# A little breathing room before the car/map pickers.
+	var pad := Label.new()
+	pad.text = "Or pick a gamepad below — left stick to steer, RT gas, LT brake."
+	pad.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	parent.add_child(pad)
+
 	var spacer := Control.new()
 	spacer.custom_minimum_size = Vector2(0, 8)
 	parent.add_child(spacer)
 
-# Adds a "<label> + OptionButton" row to the menu and returns the OptionButton.
+
 func _add_menu_row(parent: Control, label_text: String) -> OptionButton:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	parent.add_child(row)
 
 	var label := Label.new()
@@ -234,24 +351,31 @@ func _add_menu_row(parent: Control, label_text: String) -> OptionButton:
 	row.add_child(label)
 
 	var option := OptionButton.new()
-	option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	option.custom_minimum_size = Vector2(220, 0)
 	row.add_child(option)
 	return option
 
-# Reads the selections, tears down the menu, and starts the race.
+func _add_input_row(parent: Control, label_text: String, default_index: int) -> OptionButton:
+	var option := _add_menu_row(parent, label_text)
+	for desc in _input_options:
+		option.add_item(desc["label"])
+	if _input_options.size() > 0:
+		option.select(clampi(default_index, 0, _input_options.size() - 1))
+	return option
+
+
 func _on_start_pressed() -> void:
-	var p1_idx := _p1_option.selected
-	var p2_idx := _p2_option.selected
+	var p1_idx: int = _p1_pick["option"].selected
+	var p2_idx: int = _p2_pick["option"].selected
 	var map_idx := _map_option.selected
+	var p1_controller := _make_controller(_p1_input_option.selected)
+	var p2_controller := _make_controller(_p2_input_option.selected)
 	_menu_layer.queue_free()
-	_start_race(cars[p1_idx], cars[p2_idx], maps[map_idx])
+	_start_race(cars[p1_idx], cars[p2_idx], maps[map_idx], p1_controller, p2_controller)
 
 
-# Builds one split-screen half: the game view (SubViewport) with a colored frame
-# and a score Label layered on top. Returns { "viewport": SubViewport,
-# "score_label": Label } so the caller can wire the label to the right car.
+# Builds one split-screen half: the game view plus a HUD (score + race time).
 func _make_split_viewport(parent: Control, border_color: Color) -> Dictionary:
-	# A plain Control holds the stack: game view on the bottom, HUD on top.
 	var half := Control.new()
 	half.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	half.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -267,7 +391,7 @@ func _make_split_viewport(parent: Control, border_color: Color) -> Dictionary:
 	vp.handle_input_locally = false
 	container.add_child(vp)
 
-	# Frame: a transparent panel whose only job is the colored border.
+	# Colored frame.
 	var frame := Panel.new()
 	frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -278,28 +402,33 @@ func _make_split_viewport(parent: Control, border_color: Color) -> Dictionary:
 	frame.add_theme_stylebox_override("panel", style)
 	half.add_child(frame)
 
-	# Score label, top-left, colored to match the frame.
+	# HUD, top-left: score on top, race time below.
+	var hud := VBoxContainer.new()
+	hud.position = Vector2(12, 8)
+	hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	half.add_child(hud)
+
 	var score_label := Label.new()
-	score_label.position = Vector2(12, 8)
 	score_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	score_label.add_theme_color_override("font_color", border_color)
-	half.add_child(score_label)
+	hud.add_child(score_label)
 
-	return { "viewport": vp, "score_label": score_label }
+	var time_label := Label.new()
+	time_label.text = "Time  00:00.00"
+	time_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	time_label.add_theme_color_override("font_color", border_color)
+	hud.add_child(time_label)
+
+	return { "viewport": vp, "score_label": score_label, "time_label": time_label }
 
 
-# Per-car scoring: a car scores one point each time it has cleared *all* of the
-# map's waypoints. _hit_waypoints tracks which waypoint indices a car has cleared
-# in the current lap; once it holds them all we bump the score, then reset the lap
-# so the car can score again by clearing every waypoint once more.
+# --- Scoring --------------------------------------------------------------
 var _scores := {}
 var _score_labels := {}
 var _hit_waypoints := {}
 var _waypoint_total := 0
 
-# First car to reach this many points wins the race.
 const WIN_SCORE := 3
-# Set once a winner is decided so further waypoint hits are ignored.
 var _game_over := false
 
 func _register_score(c: Car, label: Label) -> void:
@@ -310,7 +439,7 @@ func _register_score(c: Car, label: Label) -> void:
 
 func _update_score_label(c: Car) -> void:
 	var label: Label = _score_labels[c]
-	label.text = "%s — Score: %d" % [c.fetch_car_name(), _scores[c]]
+	label.text = "%s — Laps: %d/%d" % [c.fetch_car_name(), _scores[c], WIN_SCORE]
 
 func _on_waypoint_entered(body: Node2D, index: int) -> void:
 	if _game_over:
@@ -320,50 +449,45 @@ func _on_waypoint_entered(body: Node2D, index: int) -> void:
 		return
 	if not _hit_waypoints.has(car):
 		return
-	# A dictionary keyed by waypoint index acts as a set, so re-hitting the same
-	# waypoint within a lap doesn't count twice.
 	var hits: Dictionary = _hit_waypoints[car]
 	hits[index] = true
-		
+
 func on_start_finish_line_entered(body: Node2D) -> void:
 	var car := body as Car
 	if car == null:
 		return
-	print(car.fetch_car_name(), " crossed the start/finish line")
+	if not _hit_waypoints.has(car):
+		return
 	var hits: Dictionary = _hit_waypoints[car]
-	
-	# All waypoints cleared -> score a point and reset for another lap.
+
 	if _waypoint_total > 0 and hits.size() >= _waypoint_total:
 		_scores[car] += 1
 		hits.clear()
-		print(car.fetch_car_name(), " cleared all waypoints -> score ", _scores[car])
-		# Lap sound for a normal lap; the winning lap plays the win sound instead
-		# (handled in _show_winner), so we don't stack both on the same frame.
 		if _map and _scores[car] < WIN_SCORE:
 			_map.play_lap_sound()
 	_update_score_label(car)
 
-	# First car to reach WIN_SCORE wins the race.
 	if _scores[car] >= WIN_SCORE:
 		_show_winner(car)
 
 
-
-# Freezes the race and shows a full-screen "<car> Wins!" overlay with a button to
-# play again. The overlay lives on its own CanvasLayer set to PROCESS_MODE_ALWAYS
-# so its button still responds while the rest of the tree is paused.
+# Freezes the race and shows a "<car> Wins!" overlay with each car's win/lose pose.
 func _show_winner(winner: Car) -> void:
 	_game_over = true
-	# Play the win sound before pausing, and silence the cars' engines.
+	_race_running = false
 	if _map:
 		_map.play_win_sound()
 	for c in _race_cars:
 		c.stop_sounds()
+		if c == winner:
+			c.show_win()
+		else:
+			c.show_lose()
 	get_tree().paused = true
 
 	var layer := CanvasLayer.new()
 	layer.process_mode = Node.PROCESS_MODE_ALWAYS
-	layer.layer = 100  # Sit above the split-screen HUD.
+	layer.layer = 100
 	add_child(layer)
 
 	var bg := ColorRect.new()
@@ -376,26 +500,36 @@ func _show_winner(winner: Car) -> void:
 	layer.add_child(center)
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 16)
+	vbox.add_theme_constant_override("separation", 12)
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	center.add_child(vbox)
+
+	# Winner's victory artwork.
+	var art := TextureRect.new()
+	art.texture = winner.get_selection_texture()
+	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	art.custom_minimum_size = Vector2(320, 160)
+	vbox.add_child(art)
 
 	var title := Label.new()
 	title.text = "%s Wins!" % winner.fetch_car_name()
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 48)
+	title.add_theme_color_override("font_color", winner.theme_color)
 	vbox.add_child(title)
 
 	var subtitle := Label.new()
-	subtitle.text = "First to %d points" % WIN_SCORE
+	subtitle.text = "Finish time  %s   •   first to %d laps" % [_format_time(_race_time), WIN_SCORE]
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(subtitle)
 
 	var again := Button.new()
 	again.text = "Play Again"
+	again.add_theme_font_size_override("font_size", 22)
 	again.pressed.connect(_on_play_again_pressed)
 	vbox.add_child(again)
 
-# Unpauses and reloads the scene, which drops the player back at the car/map menu.
 func _on_play_again_pressed() -> void:
 	get_tree().paused = false
 	get_tree().reload_current_scene()
@@ -404,55 +538,67 @@ func _on_play_again_pressed() -> void:
 func _bounds_rect() -> Rect2:
 	return Rect2(Vector2.ZERO, maps_bounds)
 
-
 func _track_car(c: Car) -> void:
 	tracked_cars.append(c)
 	_car_inside[c] = _bounds_rect().has_point(c.global_position)
 
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
-	# Player 2's camera isn't parented to its car (it lives in the other
-	# viewport), so keep it centered on car2 manually.
+	# Advance and display the race clock (stops once the tree pauses on win).
+	if _race_running:
+		_race_time += delta
+		var t := _format_time(_race_time)
+		for lbl in _time_labels:
+			lbl.text = "Time  " + t
+
+	# Player 2's camera isn't parented to its car, so keep it on car2.
 	if _cam2 and _car2:
 		_cam2.global_position = _car2.global_position
 
+	# Out-of-bounds cars take damage and are briefly stunned (recovery stat).
 	var rect := _bounds_rect()
 	for c in tracked_cars:
 		var inside := rect.has_point(c.global_position)
 		if _car_inside[c] and not inside:
-			var d = c.fetch_damange()
-			d = d + 1
-			c.apply_damage(d)
-			print("Car '", c.name, "' hit the map bounds at ", c.global_position, " damage is ", c.fetch_damange())
+			c.apply_damage(c.fetch_damange() + 1)
+			c.crash()
 		_car_inside[c] = inside
 
-var instances: Array[Node] = []
 
-func load_packed_scene(dir_path:String) -> Array[PackedScene]:
+func _format_time(t: float) -> String:
+	var minutes := int(t) / 60
+	var seconds := int(t) % 60
+	var centis := int((t - floorf(t)) * 100.0)
+	return "%02d:%02d.%02d" % [minutes, seconds, centis]
+
+
+# --- Scene discovery ------------------------------------------------------
+# Scans a res:// folder tree for .tscn files whose root is a Car or Map, keeping
+# both the PackedScene (to spawn) and one instance (for menu metadata/art).
+func _load_scenes(dir_path: String, out_instances: Array) -> Array[PackedScene]:
 	var result: Array[PackedScene] = []
 	var dir := DirAccess.open("res://" + dir_path + "/")
-	if dir:
-		dir.list_dir_begin()
-		var file_name := dir.get_next()
-		while file_name != "":
-			if dir.current_is_dir():
-				# Skip Godot's "." / ".." and recurse into real sub-folders
-				if file_name != "." and file_name != "..":
-					result.append_array(load_packed_scene(dir_path.path_join(file_name)))
-			elif file_name.ends_with(".tscn"):
-				var scene_path := ("res://" + dir_path).path_join(file_name)
-				var packed_scene: PackedScene = load(scene_path)			
-				var instance: Node = packed_scene.instantiate()
-				if instance is Car or instance is Map:
-					instances.append(instance)
-					result.append(packed_scene)
-			file_name = dir.get_next()
-		dir.list_dir_end()
-	else:
-		push_error("An error occurred when trying to access the path: " + dir_path)
+	if dir == null:
+		push_error("Could not open path: " + dir_path)
+		return result
+	dir.list_dir_begin()
+	var file_name := dir.get_next()
+	while file_name != "":
+		if dir.current_is_dir():
+			if file_name != "." and file_name != "..":
+				result.append_array(_load_scenes(dir_path.path_join(file_name), out_instances))
+		elif file_name.ends_with(".tscn"):
+			var scene_path := ("res://" + dir_path).path_join(file_name)
+			var packed: PackedScene = load(scene_path)
+			var instance: Node = packed.instantiate()
+			if instance is Car or instance is Map:
+				out_instances.append(instance)
+				result.append(packed)
+		file_name = dir.get_next()
+	dir.list_dir_end()
 	return result
-	
+
+
 func power_up_hit(info: PowerUpHitInfo):
 	var c := info.car
 	if c == null:
@@ -467,10 +613,8 @@ func power_up_hit(info: PowerUpHitInfo):
 		PowerUpEffect.Kind.SPEED_BOOST:
 			c.apply_speed_boost(effect.magnitude, effect.duration)
 		PowerUpEffect.Kind.FIRE:
-			# Offensive pickup: singes the car, adding to its damage tally.
 			c.apply_damage(c.fetch_damange() + int(effect.magnitude))
 		PowerUpEffect.Kind.OIL_SLICK:
-			# Hazard: temporarily scales speed (magnitude < 1 slows the car down).
 			c.apply_speed_boost(effect.magnitude, effect.duration)
 		PowerUpEffect.Kind.SHIELD:
 			c.apply_steer_bost(effect.magnitude, effect.duration)
