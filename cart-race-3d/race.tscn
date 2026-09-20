@@ -1,8 +1,6 @@
 [gd_scene format=3 uid="uid://race3dmain"]
 
 [ext_resource type="Script" path="res://race.gd" id="1_race"]
-[ext_resource type="PackedScene" path="res://track.tscn" id="2_track"]
-[ext_resource type="PackedScene" path="res://car.tscn" id="3_car"]
 [ext_resource type="Script" path="res://camera_follow.gd" id="4_cam"]
 
 [sub_resource type="World3D" id="World"]
@@ -43,26 +41,8 @@ environment = SubResource("Env")
 transform = Transform3D(0.7071, 0, -0.7071, -0.5792, 0.5736, -0.5792, 0.4056, 0.8192, 0.4056, 0, 40, 0)
 shadow_enabled = true
 
-[node name="Track" parent="Split/TopContainer/TopViewport" instance=ExtResource("2_track")]
-
-[node name="Car1" parent="Split/TopContainer/TopViewport" instance=ExtResource("3_car")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40, 0.6, 8)
-action_accel = "p1_accel"
-action_brake = "p1_brake"
-action_left = "p1_left"
-action_right = "p1_right"
-body_color = Color(0.9, 0.25, 0.2, 1)
-
-[node name="Car2" parent="Split/TopContainer/TopViewport" instance=ExtResource("3_car")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 48, 0.6, 8)
-action_accel = "p2_accel"
-action_brake = "p2_brake"
-action_left = "p2_left"
-action_right = "p2_right"
-body_color = Color(0.2, 0.45, 0.95, 1)
-
 [node name="Camera1" type="Camera3D" parent="Split/TopContainer/TopViewport"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40, 5, 18)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 18)
 current = true
 script = ExtResource("4_cam")
 
@@ -78,6 +58,6 @@ world_3d = SubResource("World")
 render_target_update_mode = 4
 
 [node name="Camera2" type="Camera3D" parent="Split/BottomContainer/BottomViewport"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 48, 5, 18)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 18)
 current = true
 script = ExtResource("4_cam")
