@@ -1,0 +1,83 @@
+[gd_scene format=3 uid="uid://race3dmain"]
+
+[ext_resource type="Script" path="res://race.gd" id="1_race"]
+[ext_resource type="PackedScene" path="res://track.tscn" id="2_track"]
+[ext_resource type="PackedScene" path="res://car.tscn" id="3_car"]
+[ext_resource type="Script" path="res://camera_follow.gd" id="4_cam"]
+
+[sub_resource type="World3D" id="World"]
+
+[sub_resource type="Environment" id="Env"]
+background_mode = 1
+background_color = Color(0.53, 0.72, 0.92, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.62, 0.67, 0.78, 1)
+ambient_light_energy = 0.7
+
+[node name="Race" type="Node"]
+script = ExtResource("1_race")
+
+[node name="Split" type="VBoxContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 3
+
+[node name="TopContainer" type="SubViewportContainer" parent="Split"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+stretch = true
+
+[node name="TopViewport" type="SubViewport" parent="Split/TopContainer"]
+handle_input_locally = false
+world_3d = SubResource("World")
+render_target_update_mode = 4
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="Split/TopContainer/TopViewport"]
+environment = SubResource("Env")
+
+[node name="Sun" type="DirectionalLight3D" parent="Split/TopContainer/TopViewport"]
+transform = Transform3D(0.7071, 0, -0.7071, -0.5792, 0.5736, -0.5792, 0.4056, 0.8192, 0.4056, 0, 40, 0)
+shadow_enabled = true
+
+[node name="Track" parent="Split/TopContainer/TopViewport" instance=ExtResource("2_track")]
+
+[node name="Car1" parent="Split/TopContainer/TopViewport" instance=ExtResource("3_car")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40, 0.6, 8)
+action_accel = "p1_accel"
+action_brake = "p1_brake"
+action_left = "p1_left"
+action_right = "p1_right"
+body_color = Color(0.9, 0.25, 0.2, 1)
+
+[node name="Car2" parent="Split/TopContainer/TopViewport" instance=ExtResource("3_car")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 48, 0.6, 8)
+action_accel = "p2_accel"
+action_brake = "p2_brake"
+action_left = "p2_left"
+action_right = "p2_right"
+body_color = Color(0.2, 0.45, 0.95, 1)
+
+[node name="Camera1" type="Camera3D" parent="Split/TopContainer/TopViewport"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40, 5, 18)
+current = true
+script = ExtResource("4_cam")
+
+[node name="BottomContainer" type="SubViewportContainer" parent="Split"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+stretch = true
+
+[node name="BottomViewport" type="SubViewport" parent="Split/BottomContainer"]
+handle_input_locally = false
+world_3d = SubResource("World")
+render_target_update_mode = 4
+
+[node name="Camera2" type="Camera3D" parent="Split/BottomContainer/BottomViewport"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 48, 5, 18)
+current = true
+script = ExtResource("4_cam")
