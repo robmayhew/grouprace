@@ -44,8 +44,9 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if _race_running and not _game_over:
 		_race_time += delta
-	for hud in _huds:
-		_update_hud(hud)
+	if _huds.size() > 0:
+		_update_hud(_huds[0],false)
+		_update_hud(_huds[1],true)
 
 
 # =============================================================================
@@ -282,22 +283,23 @@ func _start_race(car1_scene: PackedScene, car2_scene: PackedScene, map_scene: Pa
 
 
 func _build_huds(car1: Car, accent1: Color, car2: Car, accent2: Color) -> void:
-	var layer := CanvasLayer.new()
-	layer.name = "HUD"
-	add_child(layer)
-	var root := Control.new()
-	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	layer.add_child(root)
-
-	var l1 := _make_hud_label(root, accent1, 0.0)
-	var l2 := _make_hud_label(root, accent2, 0.5)
+	#var layer := CanvasLayer.new()
+	#layer.name = "HUD"
+	#add_child(layer)
+	#var root := Control.new()
+	#root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	#root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	#layer.add_child(root)
+#
+	#var l1 := _make_hud_label(root, accent1, 0.0)
+	#var l2 := _make_hud_label(root, accent2, 0.5)
 	_huds = [
-		{ "car": car1, "label": l1, "accent": accent1 },
-		{ "car": car2, "label": l2, "accent": accent2 },
+		{ "car": car1},
+		{ "car": car2 },
 	]
-	for hud in _huds:
-		_update_hud(hud)
+
+	_update_hud(_huds[0],false)
+	_update_hud(_huds[1],true)
 
 func _make_hud_label(parent: Control, accent: Color, anchor_top: float) -> Label:
 	var label := Label.new()
@@ -310,12 +312,17 @@ func _make_hud_label(parent: Control, accent: Color, anchor_top: float) -> Label
 	parent.add_child(label)
 	return label
 
-func _update_hud(hud: Dictionary) -> void:
+func _update_hud(hud: Dictionary, bottom:bool) -> void:
 	var c: Car = hud["car"]
+	var name = c.character_name
 	var laps: int = _scores.get(c, 0)
-	hud["label"].text = "%s\nLaps %d/%d   Time %s" % [
-		c.character_name, laps, WIN_LAPS, _format_time(_race_time)]
-
+	if(bottom):
+		$HUD_LAYER/BottomCharacterLabel.text = c.character_name
+		$HUD_LAYER/BottomLapsLabel.text = str(laps)
+	else:
+		$HUD_LAYER/TopCharacterLabel.text	 = c.character_name
+		$HUD_LAYER/TopLapsLabel.text = str(laps)
+		
 
 # =============================================================================
 # Scoring

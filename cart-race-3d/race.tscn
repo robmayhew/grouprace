@@ -1,9 +1,7 @@
 [gd_scene format=3 uid="uid://race3dmain"]
 
-[ext_resource type="Script" path="res://race.gd" id="1_race"]
-[ext_resource type="Script" path="res://camera_follow.gd" id="4_cam"]
-
-[sub_resource type="World3D" id="World"]
+[ext_resource type="Script" uid="uid://btdqqlhk4c3ry" path="res://race.gd" id="1_race"]
+[ext_resource type="Script" uid="uid://1i6uisklx38q" path="res://camera_follow.gd" id="4_cam"]
 
 [sub_resource type="Environment" id="Env"]
 background_mode = 1
@@ -12,10 +10,13 @@ ambient_light_source = 2
 ambient_light_color = Color(0.62, 0.67, 0.78, 1)
 ambient_light_energy = 0.7
 
-[node name="Race" type="Node"]
+[sub_resource type="World3D" id="World"]
+environment = SubResource("Env")
+
+[node name="Race" type="Node" unique_id=751404689]
 script = ExtResource("1_race")
 
-[node name="Split" type="VBoxContainer" parent="."]
+[node name="Split" type="VBoxContainer" parent="." unique_id=105869044]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -23,41 +24,84 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 3
 
-[node name="TopContainer" type="SubViewportContainer" parent="Split"]
+[node name="TopContainer" type="SubViewportContainer" parent="Split" unique_id=2098732830]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 stretch = true
 
-[node name="TopViewport" type="SubViewport" parent="Split/TopContainer"]
-handle_input_locally = false
+[node name="TopViewport" type="SubViewport" parent="Split/TopContainer" unique_id=218071977]
 world_3d = SubResource("World")
+handle_input_locally = false
+size = Vector2i(1152, 322)
 render_target_update_mode = 4
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="Split/TopContainer/TopViewport"]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="Split/TopContainer/TopViewport" unique_id=1350573778]
 environment = SubResource("Env")
 
-[node name="Sun" type="DirectionalLight3D" parent="Split/TopContainer/TopViewport"]
+[node name="Sun" type="DirectionalLight3D" parent="Split/TopContainer/TopViewport" unique_id=1549217663]
 transform = Transform3D(0.7071, 0, -0.7071, -0.5792, 0.5736, -0.5792, 0.4056, 0.8192, 0.4056, 0, 40, 0)
 shadow_enabled = true
 
-[node name="Camera1" type="Camera3D" parent="Split/TopContainer/TopViewport"]
+[node name="Camera1" type="Camera3D" parent="Split/TopContainer/TopViewport" unique_id=76864264]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 18)
 current = true
 script = ExtResource("4_cam")
 
-[node name="BottomContainer" type="SubViewportContainer" parent="Split"]
+[node name="BottomContainer" type="SubViewportContainer" parent="Split" unique_id=1109359300]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 stretch = true
 
-[node name="BottomViewport" type="SubViewport" parent="Split/BottomContainer"]
-handle_input_locally = false
+[node name="BottomViewport" type="SubViewport" parent="Split/BottomContainer" unique_id=1940718624]
 world_3d = SubResource("World")
+handle_input_locally = false
+size = Vector2i(1152, 323)
 render_target_update_mode = 4
 
-[node name="Camera2" type="Camera3D" parent="Split/BottomContainer/BottomViewport"]
+[node name="Camera2" type="Camera3D" parent="Split/BottomContainer/BottomViewport" unique_id=1023946130]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 18)
 current = true
 script = ExtResource("4_cam")
+
+[node name="HUD_LAYER" type="CanvasLayer" parent="." unique_id=459049415]
+
+[node name="TopCharacterLabel" type="Label" parent="HUD_LAYER" unique_id=541541332]
+offset_right = 40.0
+offset_bottom = 23.0
+text = "FOX"
+
+[node name="BottomCharacterLabel" type="Label" parent="HUD_LAYER" unique_id=530083888]
+offset_top = 331.0
+offset_right = 40.0
+offset_bottom = 354.0
+text = "DOG"
+
+[node name="TopTimeLabel" type="Label" parent="HUD_LAYER" unique_id=1433942713]
+offset_left = 2.0
+offset_top = 25.0
+offset_right = 42.0
+offset_bottom = 48.0
+text = "TIME"
+
+[node name="BottomTimeLabel" type="Label" parent="HUD_LAYER" unique_id=1063453960]
+offset_top = 356.0
+offset_right = 40.0
+offset_bottom = 405.0
+text = "TIME
+"
+
+[node name="TopLapsLabel" type="Label" parent="HUD_LAYER" unique_id=1199374432]
+offset_left = 974.0
+offset_top = 4.0
+offset_right = 1014.0
+offset_bottom = 27.0
+text = "LAPS"
+
+[node name="BottomLapsLabel" type="Label" parent="HUD_LAYER" unique_id=1439448883]
+offset_left = 975.0
+offset_top = 330.0
+offset_right = 1015.0
+offset_bottom = 353.0
+text = "LAPS"
