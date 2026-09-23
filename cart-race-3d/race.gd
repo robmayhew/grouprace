@@ -20,6 +20,10 @@ var car_instances: Array[Car] = []
 var map_instances: Array[RaceMap] = []
 
 const WIN_LAPS := 3
+# The race is a one-minute sprint: the clock counts DOWN from here and whoever
+# leads on laps when it hits zero wins (a car can still clinch it early by
+# reaching WIN_LAPS).
+const RACE_DURATION := 60.0
 
 # --- Race state -----------------------------------------------------------
 var _map: RaceMap
@@ -43,7 +47,10 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	if _race_running and not _game_over:
-		_race_time += delta
+		_race_time -= delta
+		if _race_time <= 0.0:
+			_race_time = 0.0
+			_on_time_up()
 	if _huds.size() > 0:
 		_update_hud(_huds[0],false)
 		_update_hud(_huds[1],true)
@@ -278,7 +285,7 @@ func _start_race(car1_scene: PackedScene, car2_scene: PackedScene, map_scene: Pa
 	if finish:
 		finish.body_entered.connect(_on_finish_entered)
 
-	_race_time = 0.0
+	_race_time = RACE_DURATION
 	_race_running = true
 
 
@@ -318,10 +325,12 @@ func _update_hud(hud: Dictionary, bottom:bool) -> void:
 	var laps: int = _scores.get(c, 0)
 	if(bottom):
 		$HUD_LAYER/BottomCharacterLabel.text = c.character_name
-		$HUD_LAYER/BottomLapsLabel.text = str(laps)
+		$HUD_LAYER/BottomLapsLabel.text =  "Lap %d" % laps
+		$HUD_LAYER/BottomTimeLabel.text =  "Time: %s " % _format_time(_race_time)
 	else:
 		$HUD_LAYER/TopCharacterLabel.text	 = c.character_name
-		$HUD_LAYER/TopLapsLabel.text = str(laps)
+		$HUD_LAYER/TopLapsLabel.text = "Lap %d" % laps
+		$HUD_LAYER/TopTimeLabel.text =  "Time: %s " % _format_time(_race_time)
 		
 
 # =============================================================================
@@ -346,14 +355,83 @@ func _on_finish_entered(body: Node3D) -> void:
 		_scores[car] += 1
 		hits.clear()
 	if _scores[car] >= WIN_LAPS:
-		_show_winner(car)
+		_show_winner(car, "Reached %d laps with %s to spare" % [WIN_LAPS, _format_time(_race_time)])
 
 
-func _show_winner(winner: Car) -> void:
-	_game_over = true
-	_race_running = false
+func _show_winner(winner: Car, detail: String = "") -> void:
 	for c in _race_cars:
 		c.finish(c == winner)
+
+	var vbox := _make_results_overlay()
+
+	var art := TextureRect.new()
+	art.texture = winner.get_selection_texture()
+	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	art.custom_minimum_size = Vector2(320, 160)
+	vbox.add_child(art)
+
+	var title := Label.new()
+	title.text = "%s Wins!" % winner.character_name
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 46)
+	title.add_theme_color_override("font_color", winner.theme_color)
+	vbox.add_child(title)
+
+	if detail != "":
+		var subtitle := Label.new()
+		subtitle.text = detail
+		subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		vbox.add_child(subtitle)
+
+	_add_play_again(vbox)
+
+
+# The minute ran out: whoever leads on laps wins; equal laps is a draw.
+func _on_time_up() -> void:
+	if _game_over:
+		return
+	var leader: Car = null
+	var tie := false
+	for c in _race_cars:
+		if leader == null or _scores[c] > _scores[leader]:
+			leader = c
+			tie = false
+		elif _scores[c] == _scores[leader]:
+			tie = true
+	if leader != null and not tie:
+		_show_winner(leader, "Most laps when the minute ran out")
+	else:
+		_show_draw()
+
+
+func _show_draw() -> void:
+	for c in _race_cars:
+		c.finish(false)
+
+	var vbox := _make_results_overlay()
+
+	var title := Label.new()
+	title.text = "Time's Up — Draw!"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 46)
+	vbox.add_child(title)
+
+	var laps := 0
+	if _race_cars.size() > 0:
+		laps = int(_scores.get(_race_cars[0], 0))
+	var subtitle := Label.new()
+	subtitle.text = "Both finished on %d laps" % laps
+	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(subtitle)
+
+	_add_play_again(vbox)
+
+
+# Builds the dimmed full-screen results panel and returns its content VBox.
+func _make_results_overlay() -> VBoxContainer:
+	_game_over = true
+	_race_running = false
 
 	var layer := CanvasLayer.new()
 	layer.layer = 100
@@ -372,26 +450,10 @@ func _show_winner(winner: Car) -> void:
 	vbox.add_theme_constant_override("separation", 12)
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	center.add_child(vbox)
+	return vbox
 
-	var art := TextureRect.new()
-	art.texture = winner.get_selection_texture()
-	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	art.custom_minimum_size = Vector2(320, 160)
-	vbox.add_child(art)
 
-	var title := Label.new()
-	title.text = "%s Wins!" % winner.character_name
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 46)
-	title.add_theme_color_override("font_color", winner.theme_color)
-	vbox.add_child(title)
-
-	var subtitle := Label.new()
-	subtitle.text = "Finish time  %s   •   first to %d laps" % [_format_time(_race_time), WIN_LAPS]
-	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	vbox.add_child(subtitle)
-
+func _add_play_again(vbox: VBoxContainer) -> void:
 	var again := Button.new()
 	again.text = "Play Again"
 	again.add_theme_font_size_override("font_size", 22)
